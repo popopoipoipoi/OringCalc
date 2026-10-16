@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#0e1014">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="description" content="クレーンゲームのOリング・固定フック設定を2タップで攻略計算し、店舗ごとの成功周期・お得額データを記録できるモバイルアプリ。">
-<title>Oリング攻略ノート</title>
+<meta name="description" content="クレーンゲームのOリング・固定フック設定を2タップで攻略計算し、店舗ごとの正解周期・収支データを記録できるモバイルアプリ。">
+<title>Oリング攻略</title>
 <style>
   :root{
     --bg:#0e1014; --card:#181b22; --card2:#21252e; --line:#2c313c;
@@ -63,7 +63,26 @@
   .hr.rel{background:var(--grn);color:#02130a}
   .hr.land{background:var(--red);color:#fff}
   .hr.rel.land{background:linear-gradient(135deg,var(--grn) 50%,var(--red) 50%);color:#fff}
-  .hr.next{outline:3px dashed var(--acc);outline-offset:3px}
+
+  /* 正解破線の最前面強調・発光アニメーション */
+  @keyframes pulseNext {
+    0% { outline-color: #38bdf8; box-shadow: 0 0 8px #38bdf8; }
+    100% { outline-color: #ffffff; box-shadow: 0 0 18px #38bdf8, 0 0 8px #ffffff; }
+  }
+  .hr.next{
+    outline: 3.5px dashed #38bdf8 !important;
+    outline-offset: 3px !important;
+    z-index: 10 !important;
+    animation: pulseNext 1.2s infinite alternate !important;
+  }
+  .ph.next{
+    outline: 3.5px dashed #38bdf8 !important;
+    outline-offset: 2px !important;
+    z-index: 10 !important;
+    position: relative;
+    animation: pulseNext 1.2s infinite alternate !important;
+  }
+
   .center{position:absolute;inset:22%;display:flex;flex-direction:column;align-items:center;
     justify-content:center;text-align:center;pointer-events:none}
   .center .big{font-size:32px;line-height:1}
@@ -80,7 +99,6 @@
   .ph.land{background:var(--red);color:#fff}
   .ph.rel.land{background:linear-gradient(135deg,var(--grn) 50%,var(--red) 50%);color:#fff}
   .ph.rel small,.ph.land small{color:inherit}
-  .ph.next{outline:3px dashed var(--acc);outline-offset:2px}
   .gauge-h{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-top:10px;font-weight:700}
 
   .legend{display:flex;gap:12px;justify-content:center;font-size:11px;color:var(--mut);margin-top:12px;flex-wrap:wrap}
@@ -137,10 +155,14 @@
   .res-alt{font-size:13px;color:var(--mut);margin-top:6px}
   .res-wait{font-size:16px;font-weight:800;padding:8px 0}
 
-  .btn-win{display:block;width:100%;margin-top:14px;padding:16px;border-radius:12px;
-    background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#261800;font-weight:900;font-size:18px;box-shadow:0 4px 14px rgba(245,158,11,0.3)}
-  .btn-main{display:block;width:100%;margin-top:8px;padding:14px;border-radius:12px;
-    background:var(--card2);border:1px solid var(--line);color:var(--tx);font-weight:800;font-size:15px}
+  .btn-win-group{display:flex;gap:8px;margin-top:14px}
+  .btn-win{flex:2;padding:15px;border-radius:12px;
+    background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#261800;font-weight:900;font-size:16px;box-shadow:0 4px 14px rgba(245,158,11,0.3)}
+  .btn-lose{flex:1;padding:15px;border-radius:12px;
+    background:#2b2024;border:1px solid #572b38;color:#fca5a5;font-weight:800;font-size:14px}
+
+  .btn-main{display:block;width:100%;margin-top:8px;padding:13px;border-radius:12px;
+    background:var(--card2);border:1px solid var(--line);color:var(--tx);font-weight:800;font-size:14px}
   .btn-sub{display:block;width:100%;padding:13px;border-radius:12px;background:var(--card2);
     border:1px solid var(--line);font-weight:800;font-size:15px}
   .btn-danger{color:var(--red)}
@@ -150,10 +172,13 @@
   .rec-title{flex:1;min-width:0}
   .rec-store{font-size:14px;color:var(--mut);font-weight:700;word-break:break-all}
   .rec-prize{font-size:18px;font-weight:900;color:#ffffff;margin-top:3px;word-break:break-all;line-height:1.25}
+  
   .rec-count-badge{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:14px;font-weight:800;color:var(--tx);white-space:nowrap;flex:none}
   .rec-count-badge b{font-size:18px;color:var(--gold);margin:0 2px}
+  .rec-count-badge.zero{border-color:#572b38;background:#2b2024;color:#fca5a5}
+  .rec-count-badge.zero b{color:#fca5a5}
 
-  /* 成功周期ハイライトボックス */
+  /* 正解周期ハイライトボックス */
   .rec-success-box{margin-top:10px;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.3);border-radius:10px;padding:10px 12px}
   .rec-success-box .stitle{font-size:11px;color:var(--acc);font-weight:800;display:flex;align-items:center;gap:4px}
   .rec-success-box .smain{font-size:17px;font-weight:900;color:#e0f2fe;margin:3px 0}
@@ -206,15 +231,15 @@
 <body>
 
 <header class="appbar">
-  <h1>🪝 Oリング攻略ノート</h1>
+  <h1>🪝 Oリング攻略</h1>
   <div class="sub" id="appSub"></div>
 </header>
 
 <div class="toast" id="toast"></div>
 
 <main>
-  <!-- ========== 攻略計算 ========== -->
-  <section id="view-calc" class="view active" aria-label="攻略計算">
+  <!-- ========== 攻略 ========== -->
+  <section id="view-calc" class="view active" aria-label="攻略">
     <!-- プレイ基本情報入力 -->
     <div class="card" id="playInfoCard">
       <div class="step-h">
@@ -227,11 +252,11 @@
       <div class="chips" id="pStoreChips"></div>
 
       <div class="label">景品名・種類</div>
-      <input class="inp" id="pPrize" type="text" placeholder="例：人気フィギュア / ぬいぐるみ" autocomplete="off">
+      <input class="inp" id="pPrize" type="text" placeholder="例：ダブルソフト3斤" autocomplete="off">
       <div class="chips" id="pPrizeChips"></div>
 
       <div class="c-row">
-        <span class="c-label">狙う個数 <small style="font-size:11px;color:var(--mut);font-weight:normal">（獲得予定）</small></span>
+        <span class="c-label">景品の個数</span>
         <div class="counter">
           <button data-act="pcount-dec" id="btnPCountDec" aria-label="減らす">−</button>
           <span class="n" id="pCount">1</span>
@@ -239,7 +264,7 @@
         </div>
       </div>
 
-      <div class="label">💰 収支・お得度計算（任意）</div>
+      <div class="label">💰 収支（任意）</div>
       <div class="money-grid">
         <div class="money-col">
           <label>投入金額（100円単位）</label>
@@ -260,7 +285,7 @@
         <div class="money-col">
           <label>景品の推定価値（1個あたり）</label>
           <div class="money-unit">
-            <input class="inp" id="pValue" type="number" step="100" inputmode="numeric" placeholder="2500">
+            <input class="inp" id="pValue" type="number" step="100" inputmode="numeric" placeholder="1200">
             <span class="u">円</span>
           </div>
         </div>
@@ -271,15 +296,15 @@
     <!-- Step 1：環境確認 -->
     <div class="card">
       <div class="step-h"><span class="step-no">1</span>プレイ前の環境確認</div>
-      <div class="label">クレーンの進行方向</div>
+      <div class="label">アームの初期位置</div>
       <div class="seg" id="dirSeg"></div>
-      <div class="label">フックの向き（入り口の方向＝🎯目標位置）</div>
+      <div class="label">フックの向き</div>
       <div id="hookClock"></div>
     </div>
 
-    <!-- Step 2：1手目測定 -->
+    <!-- Step 2：結果入力 -->
     <div class="card">
-      <div class="step-h"><span class="step-no">2</span>1手目の結果入力（周期測定）
+      <div class="step-h"><span class="step-no">2</span>結果入力（周期測定）
         <button class="minibtn right" id="btnReset" data-act="reset">↺ やり直す</button>
       </div>
       <div class="label">揺れの軌道タイプ</div>
@@ -292,8 +317,8 @@
     <div class="card result" id="resultCard"></div>
   </section>
 
-  <!-- ========== 記録ログ ========== -->
-  <section id="view-log" class="view" aria-label="記録ログ">
+  <!-- ========== 記録 ========== -->
+  <section id="view-log" class="view" aria-label="記録">
     <div class="card">
       <input class="inp" id="filterQ" type="search" placeholder="🔍 店舗名・景品名で絞り込み" autocomplete="off">
       <div class="chips" id="storeChips"></div>
@@ -303,8 +328,8 @@
 </main>
 
 <nav class="tabbar" aria-label="画面切り替え">
-  <button class="tab on" id="tab-calc" data-act="tab" data-v="calc"><span class="ic">🎯</span>攻略計算</button>
-  <button class="tab" id="tab-log" data-act="tab" data-v="log"><span class="ic">📝</span>記録ログ</button>
+  <button class="tab on" id="tab-calc" data-act="tab" data-v="calc"><span class="ic">🎯</span>攻略</button>
+  <button class="tab" id="tab-log" data-act="tab" data-v="log"><span class="ic">📝</span>記録</button>
 </nav>
 
 <!-- 編集・詳細記録ダイアログ -->
@@ -320,12 +345,12 @@
     <input class="inp" id="fStore" type="text" placeholder="例：〇〇ゲームセンター 駅前店" autocomplete="off">
     <div class="chips" id="fStoreChips"></div>
 
-    <div class="label">景品の種類・名前</div>
-    <input class="inp" id="fPrize" type="text" placeholder="例：フィギュア / ぬいぐるみ" autocomplete="off">
+    <div class="label">景品名・種類</div>
+    <input class="inp" id="fPrize" type="text" placeholder="例：ダブルソフト3斤" autocomplete="off">
     <div class="chips" id="fPrizeChips"></div>
 
     <div class="c-row" style="margin-top:12px">
-      <span class="c-label">獲得個数</span>
+      <span class="c-label">景品の個数</span>
       <div class="counter">
         <button data-act="dlg-dec" id="fCountDec" aria-label="減らす">−</button>
         <span class="n" id="fCount">1</span>
@@ -333,7 +358,7 @@
       </div>
     </div>
 
-    <div class="label">💰 収支・お得度計算</div>
+    <div class="label">💰 収支</div>
     <div class="money-grid">
       <div class="money-col">
         <label>投入金額（100円単位）</label>
@@ -348,14 +373,14 @@
       <div class="money-col">
         <label>推定価値（1個）</label>
         <div class="money-unit">
-          <input class="inp" id="fValue" type="number" step="100" inputmode="numeric" placeholder="2500">
+          <input class="inp" id="fValue" type="number" step="100" inputmode="numeric" placeholder="1200">
           <span class="u">円</span>
         </div>
       </div>
     </div>
     <div id="dlgProfitBadge" class="profit-badge">お得額：—</div>
 
-    <div class="label">台の設定＆成功周期データ</div>
+    <div class="label">台の設定＆正解周期データ</div>
     <div id="dlgSettings"></div>
 
     <div class="label">一言メモ（任意）</div>
@@ -373,7 +398,9 @@
 /* ================= 定数・ユーティリティ ================= */
 const LS_REC = 'oring_records_v1';
 const LS_CALC = 'oring_calc_v1';
-const DIRS = ['右 ➔ 奥', '左 ➔ 奥', '奥のみ'];
+
+// アームの初期位置（右、左の2択）
+const DIRS = ['右', '左'];
 const HNAME = {12:'奥', 3:'右', 6:'手前', 9:'左'};
 const HDIR = {
   12:'奥 ⬆', 1:'右上 ⬈', 2:'右上 ⬈', 3:'右 ➡',
@@ -382,14 +409,14 @@ const HDIR = {
 };
 const SWINGS = {cw:'↻ 右回転', ccw:'↺ 左回転', line:'↔ 一直線'};
 
-// 一直線の角度（横揺れを最頻出として初期選択）
+// 一直線の角度
 const ANGLES = {
   '横':   {a:9,    A:'左',   B:'右',     ic:'↔'},
   '縦':   {a:12,   A:'奥',   B:'手前',   ic:'↕'},
   '右斜め':{a:7.5,  A:'左',   B:'右',     ic:'⤢'},
   '左斜め':{a:10.5, A:'左',   B:'右',     ic:'⤡'},
 };
-const PRIZE_PRESETS = ['フィギュア','ぬいぐるみ','お菓子','雑貨','キーホルダー','クッション'];
+const PRIZE_PRESETS = ['ダブルソフト3斤','フィギュア','ぬいぐるみ','お菓子','雑貨','クッション'];
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -410,10 +437,11 @@ function formatDateTime(ts){
 function calcProfit(cost, value, count){
   const c = parseInt(cost, 10);
   const v = parseInt(value, 10);
-  const n = parseInt(count, 10) || 1;
+  const n = parseInt(count, 10);
+  const cnt = isNaN(n) ? 0 : n;
   if (isNaN(c) && isNaN(v)) return null;
   const totCost = isNaN(c) ? 0 : c;
-  const totVal = isNaN(v) ? 0 : (v * n);
+  const totVal = isNaN(v) ? 0 : (v * cnt);
   return totVal - totCost;
 }
 
@@ -422,7 +450,10 @@ function profitBadgeHTML(cost, value, count){
   if (p == null) return `<div class="profit-badge">お得額：投入金額と推定価値を入力で自動計算</div>`;
   const costNum = parseInt(cost, 10) || 0;
   const valNum = parseInt(value, 10) || 0;
-  const n = parseInt(count, 10) || 1;
+  const n = parseInt(count, 10) || 0;
+  if (n === 0){
+    return `<div class="profit-badge minus">💔 獲得なし（投入: ${costNum.toLocaleString()}円 ➔ −${costNum.toLocaleString()}円）</div>`;
+  }
   if (p > 0) return `<div class="profit-badge plus">🎉 ＋${p.toLocaleString()}円 お得！（価値: ${(valNum*n).toLocaleString()}円 − 投入: ${costNum.toLocaleString()}円）</div>`;
   if (p === 0) return `<div class="profit-badge">⚖️ ±0円 トントン</div>`;
   return `<div class="profit-badge minus">💧 −${Math.abs(p).toLocaleString()}円（投入: ${costNum.toLocaleString()}円 / 価値: ${(valNum*n).toLocaleString()}円）</div>`;
@@ -520,7 +551,7 @@ function renderCalc(){
   // プレイ基本情報フィールドの同期
   $('pStore').value = S.store || '';
   $('pPrize').value = S.prize || '';
-  $('pCount').textContent = S.count || 1;
+  $('pCount').textContent = S.count ?? 1;
   $('pCost').value = S.cost || '';
   $('pCostSlider').value = S.cost || 0;
   $('pValue').value = S.value || '';
@@ -532,13 +563,13 @@ function renderCalc(){
   $('pPrizeChips').innerHTML = PRIZE_PRESETS.map(s =>
     `<button class="chip ${S.prize===s?'on':''}" data-act="pick-pprize" data-v="${esc(s)}">${esc(s)}</button>`).join('');
 
-  // Step 1
+  // Step 1: アームの初期位置（右・左）
   $('dirSeg').innerHTML = DIRS.map(d =>
     `<button class="segbtn ${S.dir===d?'on':''}" data-act="dir" data-v="${d}">${d}</button>`).join('');
 
   $('hookClock').innerHTML = clockHTML('hook', null);
 
-  // Step 2
+  // Step 2: 結果入力
   $('swingSeg').innerHTML = Object.entries(SWINGS).map(([k,t]) =>
     `<button class="segbtn ${S.swing===k?'on':''}" data-act="swing" data-v="${k}" id="swing-${k}">${t}</button>`).join('');
 
@@ -549,7 +580,7 @@ function renderCalc(){
 
   // タイミング入力
   if (!S.swing){
-    $('timingWrap').innerHTML = `<div class="hint">↑ 1手目の揺れ方を選んでください</div>`;
+    $('timingWrap').innerHTML = `<div class="hint">↑ 揺れ方を選んでください</div>`;
   } else {
     const line = S.swing === 'line';
     const modes = [['rel','🟢 押した',S.rel],['land','🔴 着地',S.land]];
@@ -560,28 +591,34 @@ function renderCalc(){
          `<button class="segbtn m-${k} ${S.mode===k?'on':''}" data-act="mode" data-v="${k}">${t}<small>${pointName(S,v)}</small></button>`).join('')}</div>
        ${line ? gaugeHTML(res) : clockHTML('timing', res)}
        <div class="legend"><span><i style="background:var(--grn)"></i>押した</span><span><i style="background:var(--red)"></i>着地</span>
-         <span><i style="background:var(--tgt)"></i>フック入口</span><span><i style="border:2px dashed var(--acc)"></i>2手目</span></div>`;
+         <span><i style="background:var(--tgt)"></i>フック入口</span><span><i style="border:2px dashed var(--acc)"></i>正解</span></div>`;
   }
 
-  // Step 3：結果表示
+  // Step 3：結果表示（「正解は〜」「ラグ：＋〇フェーズ」に統一）
   let html;
   if (res){
     const label = res.line ? phaseLabel(res.next, S.angle) : `${res.next}時`;
-    const lagTxt = res.line ? `ラグ：＋${res.lag}フェーズ（1周＝12）` : `ラグ：＋${res.lag}時間分`;
+    const lagTxt = `ラグ：＋${res.lag}フェーズ（1周＝12）`;
     html = `<div class="step-h" style="justify-content:center"><span class="step-no">3</span>計算結果</div>
-      <div class="res-k" style="margin-top:10px">2手目は</div>
+      <div class="res-k" style="margin-top:10px">正解は</div>
       <div class="res-big" id="resultValue">【 ${esc(label)} 】</div>
       <div class="res-k">でボタンを押す！</div>
       <div class="res-lag">${lagTxt}${res.lag===0?'（押した瞬間に着地）':''}　🪝入口:${esc(pointName(S,res.target))}</div>
       ${res.alt!=null ? `<div class="res-alt">または【 ${esc(phaseLabel(res.alt,S.angle))} 】でもOK（逆方向で同位置）</div>` : ''}
       
-      <button class="btn-win" data-act="quick-win" id="btnQuickWin">🎉 獲得した！（記録に追加）</button>
+      <div class="btn-win-group">
+        <button class="btn-win" data-act="quick-win" id="btnQuickWin">🎉 獲得した！（記録）</button>
+        <button class="btn-lose" data-act="quick-lose" id="btnQuickLose">💔 獲得ならず（記録）</button>
+      </div>
       <button class="btn-main" data-act="open-save" id="btnOpenSave">📝 詳細を編集して記録する</button>`;
   } else {
-    const msg = !S.swing ? '軌道タイプを選択' : (S.rel==null ? '🟢 1手目でボタンを押した時刻をタップ' : '🔴 1手目で着地した時刻をタップ');
+    const msg = !S.swing ? '軌道タイプを選択' : (S.rel==null ? '🟢 ボタンを押した時刻をタップ' : '🔴 着地した時刻をタップ');
     html = `<div class="step-h" style="justify-content:center"><span class="step-no">3</span>計算結果</div>
       <div class="res-wait" style="margin-top:10px;color:var(--mut)">${msg}</div>
-      <button class="btn-win" data-act="quick-win" id="btnQuickWin">🎉 獲得した！（この設定で記録）</button>
+      <div class="btn-win-group">
+        <button class="btn-win" data-act="quick-win" id="btnQuickWin">🎉 獲得した！（記録）</button>
+        <button class="btn-lose" data-act="quick-lose" id="btnQuickLose">💔 獲得ならず（記録）</button>
+      </div>
       <button class="btn-main" data-act="open-save" id="btnOpenSave">📝 記録データを入力して保存</button>`;
   }
   $('resultCard').innerHTML = html;
@@ -670,7 +707,7 @@ function storeList(){
   return [...seen.keys()];
 }
 
-/* 成功周期を主役に表示 */
+/* 正解周期を主役に表示（フェーズ単位に統一） */
 function successHTML(r){
   const res = compute(r);
   const sw = r.swing ? SWINGS[r.swing] + (r.swing==='line' ? `（${r.angle}）` : '') : '未入力';
@@ -678,10 +715,10 @@ function successHTML(r){
   
   if (res){
     const nextTiming = res.line ? phaseLabel(res.next, r.angle) : `${res.next}時`;
-    const lagStr = res.line ? `+${res.lag}フェーズ` : `+${res.lag}時間分`;
+    const lagStr = `+${res.lag}フェーズ`;
     return `
       <div class="rec-success-box">
-        <div class="stitle">🏆 成功タイミング（正解周期）</div>
+        <div class="stitle">🏆 正解タイミング（正解周期）</div>
         <div class="smain">【 ${esc(nextTiming)} 】でボタンを押す！</div>
         <div class="ssub">
           フック入口：${targetLabel}　|　軌道：${sw}<br>
@@ -693,7 +730,7 @@ function successHTML(r){
     <div class="rec-success-box">
       <div class="stitle">🎯 台の設定データ</div>
       <div class="smain">フック入口：${targetLabel}</div>
-      <div class="ssub">クレーン進行：${esc(r.dir)}　|　軌道：${sw}</div>
+      <div class="ssub">アーム初期位置：${esc(r.dir)}　|　軌道：${sw}</div>
     </div>`;
 }
 
@@ -715,26 +752,30 @@ function renderLog(){
     return s + (p != null ? p : 0);
   }, 0);
 
-  const profitText = totalProfit !== 0 ? `・お得額 ${totalProfit>0?'+':''}${totalProfit.toLocaleString()}円` : '';
+  const profitText = `・総お得額 ${totalProfit>=0?'+':''}${totalProfit.toLocaleString()}円`;
   $('appSub').textContent = `${records.length}件・累計${total}個${profitText}`;
 
   if (!records.length){
-    $('logList').innerHTML = `<div class="empty">まだ記録がありません。<br>「🎯 攻略計算」でプレイ後、<br>「🎉 獲得した！」ボタンからすぐ保存できます。</div>`;
+    $('logList').innerHTML = `<div class="empty">まだ記録がありません。<br>「🎯 攻略」でプレイ後、<br>「🎉 獲得した！」または「💔 獲得ならず」から保存できます。</div>`;
     return;
   }
   if (!list.length){ $('logList').innerHTML = `<div class="empty">条件に一致する記録がありません</div>`; return; }
 
   $('logList').innerHTML = list.map(r => {
     const isEdited = r.createdAt && r.updatedAt && Math.abs(r.updatedAt - r.createdAt) > 2000;
+    const cnt = parseInt(r.count, 10) || 0;
     const p = calcProfit(r.cost, r.value, r.count);
     let moneyHTML = '';
     if (r.cost || r.value){
       const costTxt = r.cost ? `投入: ${parseInt(r.cost,10).toLocaleString()}円` : '投入: —';
-      const valTxt = r.value ? `価値: ${(parseInt(r.value,10)*(r.count||1)).toLocaleString()}円` : '';
+      const valTxt = (r.value && cnt > 0) ? `価値: ${(parseInt(r.value,10)*cnt).toLocaleString()}円` : '';
       const profitClass = p > 0 ? 'plus' : (p < 0 ? 'minus' : '');
       const pTxt = p != null ? `<span class="profit ${profitClass}">${p>0?'+':''}${p.toLocaleString()}円</span>` : '';
       moneyHTML = `<div class="rec-money-box"><span>💰 ${costTxt} ${valTxt?'/ '+valTxt:''}</span>${pTxt}</div>`;
     }
+
+    const badgeClass = cnt === 0 ? 'rec-count-badge zero' : 'rec-count-badge';
+    const badgeText = cnt === 0 ? '獲得 <b>0</b> 個 (撤退)' : `獲得 <b>${cnt}</b> 個`;
 
     return `
     <article class="card" data-id="${r.id}">
@@ -743,7 +784,7 @@ function renderLog(){
           <div class="rec-store">🏪 ${esc(r.store || '（店舗名なし）')}</div>
           <div class="rec-prize">🎁 ${esc(r.prize || '景品名なし')}</div>
         </div>
-        <div class="rec-count-badge">獲得 <b>${r.count||1}</b> 個</div>
+        <div class="${badgeClass}">${badgeText}</div>
       </div>
       
       ${successHTML(r)}
@@ -763,11 +804,11 @@ function renderLog(){
   }).join('');
 }
 
-/* ================= クイック獲得ボタン（ワンタップ自動記録） ================= */
-function quickWin(){
+/* ================= 記録保存（獲得 / 撤退） ================= */
+function quickSave(isWin){
   const now = Date.now();
   const res = compute(S);
-  const winCount = parseInt(S.count, 10) || 1;
+  const winCount = isWin ? (Math.max(1, parseInt(S.count, 10) || 1)) : 0;
   const rec = {
     id: now.toString(36) + Math.random().toString(36).slice(2,6),
     store: (S.store || '').trim(),
@@ -784,14 +825,18 @@ function quickWin(){
     target: S.target,
     successNext: res ? res.next : null,
     lag: res ? res.lag : null,
-    memo: '',
+    memo: isWin ? '' : '撤退・未獲得',
     createdAt: now,
     updatedAt: now
   };
   records.unshift(rec);
   saveRecs();
   renderLog();
-  showToast(`🎉 ${winCount}個 獲得を記録ログに追加しました！`);
+  if (isWin){
+    showToast(`🎉 ${winCount}個 獲得を記録に追加しました！`);
+  } else {
+    showToast('💔 未獲得（撤退）を記録に追加しました（収支に反映）');
+  }
 }
 
 /* ================= ダイアログ ================= */
@@ -801,7 +846,7 @@ function openDlg(rec){
     id: null,
     store: S.store || '',
     prize: S.prize || '',
-    count: S.count || 1,
+    count: S.count ?? 1,
     cost: S.cost || '',
     value: S.value || '',
     memo: '',
@@ -823,7 +868,7 @@ function openDlg(rec){
 
   $('fStore').value = D.store;
   $('fPrize').value = D.prize;
-  $('fCount').textContent = D.count;
+  $('fCount').textContent = D.count ?? 1;
   $('fCost').value = D.cost;
   $('fCostSlider').value = D.cost || 0;
   $('fValue').value = D.value;
@@ -852,8 +897,8 @@ function renderDlgSettings(){
   const res = compute(D);
   $('dlgSettings').innerHTML = `
     <div class="sgrid">
-      <label>クレーン進行方向<select data-f="dir">${opt(DIRS.map(d=>[d,d]), D.dir)}</select></label>
-      <label>フックの向き（入口）<select data-f="hook">${opt(hours, D.hook)}</select></label>
+      <label>アーム初期位置<select data-f="dir">${opt(DIRS.map(d=>[d,d]), D.dir)}</select></label>
+      <label>フックの向き<select data-f="hook">${opt(hours, D.hook)}</select></label>
       <label>揺れの軌道<select data-f="swing">${opt(none.concat(Object.entries(SWINGS)), D.swing)}</select></label>
       ${line ? `<label>揺れの角度<select data-f="angle">${opt(Object.keys(ANGLES).map(k=>[k,k]), D.angle)}</select></label>` : '<span></span>'}
       ${D.swing ? `
@@ -861,7 +906,7 @@ function renderDlgSettings(){
       <label>🔴 かかった時刻/位置<select data-f="land">${opt(none.concat(pts), D.land)}</select></label>
       ${line ? `<label>🪝 目標入口位置<select data-f="target">${opt([['','自動（フック方向）']].concat(pts), D.target)}</select></label>` : ''}` : ''}
     </div>
-    ${res ? `<div class="dlg-res">🏆 成功タイミング：【 ${esc(res.line ? phaseLabel(res.next,D.angle) : res.next+'時')} 】でボタンを押す（ラグ+${res.lag}${res.line?'フェーズ':'時間'}）</div>` : ''}`;
+    ${res ? `<div class="dlg-res">🏆 正解タイミング：【 ${esc(res.line ? phaseLabel(res.next,D.angle) : res.next+'時')} 】でボタンを押す（ラグ+${res.lag}フェーズ）</div>` : ''}`;
 }
 
 function saveDlg(){
@@ -908,7 +953,6 @@ document.addEventListener('click', e => {
 
     // プレイ基本情報
     case 'reset-item':
-      // 店舗情報以外をリセット（次の台・景品へ）
       S.prize = '';
       S.count = 1;
       S.cost = '';
@@ -918,13 +962,13 @@ document.addEventListener('click', e => {
       S.target = null;
       S.mode = 'rel';
       renderCalc();
-      showToast('🔄 店舗名以外をリセットしました（次の台へ）');
+      showToast('🔄 台・景品情報をリセットしました');
       return;
 
     case 'pick-pstore': S.store = v; $('pStore').value = v; renderCalc(); return;
     case 'pick-pprize': S.prize = v; $('pPrize').value = v; renderCalc(); return;
     case 'pcount-inc': case 'pcount-dec':
-      S.count = Math.max(1, (parseInt(S.count,10)||1) + (act==='pcount-inc'?1:-1));
+      S.count = Math.max(0, (parseInt(S.count,10)||0) + (act==='pcount-inc'?1:-1));
       $('pCount').textContent = S.count;
       $('pProfitBadge').outerHTML = `<div id="pProfitBadge">${profitBadgeHTML(S.cost, S.value, S.count)}</div>`;
       saveCalc();
@@ -957,8 +1001,9 @@ document.addEventListener('click', e => {
     case 'timing': case 'phase': setPoint(+v); break;
     case 'reset': S.rel = null; S.land = null; S.target = null; S.mode = 'rel'; break;
 
-    // 獲得＆記録
-    case 'quick-win': quickWin(); return;
+    // 獲得＆未獲得の記録
+    case 'quick-win': quickSave(true); return;
+    case 'quick-lose': quickSave(false); return;
     case 'open-save': openDlg(null); return;
 
     // ログタブ
@@ -968,9 +1013,9 @@ document.addEventListener('click', e => {
       if (rec){
         S = {
           ...DEFAULT_CALC,
-          store: rec.store || '', prize: rec.prize || '', count: rec.count || 1,
+          store: rec.store || '', prize: rec.prize || '', count: rec.count ?? 1,
           cost: rec.cost || '', value: rec.value || '',
-          dir: rec.dir, hook: rec.hook, swing: rec.swing, angle: rec.angle || '横',
+          dir: rec.dir || '右', hook: rec.hook, swing: rec.swing, angle: rec.angle || '横',
           rel: rec.rel, land: rec.land, target: rec.target ?? null, mode: 'rel'
         };
         renderCalc();
@@ -982,7 +1027,7 @@ document.addEventListener('click', e => {
     // ダイアログ
     case 'dlg-close': $('recDlg').close(); return;
     case 'dlg-inc': case 'dlg-dec':
-      D.count = Math.max(1, (parseInt(D.count,10)||1) + (act==='dlg-inc'?1:-1));
+      D.count = Math.max(0, (parseInt(D.count,10)||0) + (act==='dlg-inc'?1:-1));
       $('fCount').textContent = D.count;
       $('dlgProfitBadge').outerHTML = `<div id="dlgProfitBadge">${profitBadgeHTML(D.cost, D.value, D.count)}</div>`;
       return;
