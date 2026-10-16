@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1014">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="クレーンゲームのOリング・固定フック設定を2タップで攻略計算し、店舗ごとの成功データを記録できるモバイルアプリ。">
+<title>Oリング攻略ノート</title>
+<style>
+  :root{
+    --bg:#0e1014; --card:#181b22; --card2:#21252e; --line:#2c313c;
+    --tx:#eef1f6; --mut:#8b93a3;
+    --acc:#38bdf8; --grn:#22c55e; --red:#ef4444; --tgt:#f5b301;
+    --r:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--tx);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;
+    -webkit-text-size-adjust:100%}
+  body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
+  button:disabled{opacity:.4}
+
+  .appbar{position:sticky;top:0;z-index:5;background:var(--bg);
+    padding:calc(10px + env(safe-area-inset-top)) 16px 10px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between}
+  .appbar h1{font-size:17px;margin:0;font-weight:800;letter-spacing:.02em}
+  .appbar .sub{font-size:12px;color:var(--mut)}
+  main{max-width:520px;margin:0 auto;padding:12px}
+  .view{display:none}.view.active{display:block}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+  .step-h{display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px}
+  .step-no{width:24px;height:24px;border-radius:50%;background:var(--acc);color:#001018;
+    display:grid;place-items:center;font-size:13px;flex:none}
+  .step-h .right{margin-left:auto}
+  .label{font-size:12px;color:var(--mut);margin:14px 0 6px;font-weight:700}
+
+  .seg{display:flex;gap:6px}
+  .segbtn{flex:1;padding:12px 4px;background:var(--card2);border:1px solid var(--line);
+    border-radius:10px;font-weight:700;font-size:14px;line-height:1.2}
+  .segbtn.on{background:var(--acc);color:#001018;border-color:var(--acc)}
+  .segbtn small{display:block;font-size:12px;font-weight:800;margin-top:3px}
+  .mode .segbtn.on.m-rel{background:var(--grn);border-color:var(--grn);color:#02130a}
+  .mode .segbtn.on.m-land{background:var(--red);border-color:var(--red);color:#fff}
+  .mode .segbtn.on.m-tgt{background:var(--tgt);border-color:var(--tgt);color:#1a1200}
+  .minibtn{padding:6px 10px;border-radius:8px;background:var(--card2);border:1px solid var(--line);
+    font-size:12px;font-weight:700;color:var(--mut)}
+
+  /* 時計盤 */
+  .clock{position:relative;width:min(82vw,280px);aspect-ratio:1;margin:8px auto 0;border-radius:50%;
+    background:var(--card2);border:1px solid var(--line)}
+  .hr{position:absolute;transform:translate(-50%,-50%);width:42px;height:42px;border-radius:50%;
+    background:#2c313c;font-weight:800;font-size:15px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;line-height:1}
+  .hr.major{width:54px;height:54px;font-size:18px;background:#363c4a}
+  .hr small{font-size:9px;color:var(--mut);margin-top:2px;font-weight:700}
+  .hr.tgt{background:var(--tgt);color:#1a1200}.hr.tgt small{color:#1a1200}
+  .hr.ring{box-shadow:0 0 0 3px var(--tgt)}
+  .hr.rel{background:var(--grn);color:#02130a}
+  .hr.land{background:var(--red);color:#fff}
+  .hr.rel.land{background:linear-gradient(135deg,var(--grn) 50%,var(--red) 50%);color:#fff}
+  .hr.next{outline:3px dashed var(--acc);outline-offset:3px}
+  .center{position:absolute;inset:22%;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;text-align:center;pointer-events:none}
+  .center .big{font-size:32px;line-height:1}
+  .center .t{font-size:12px;color:var(--tx);margin-top:4px;font-weight:800;background:rgba(0,0,0,0.4);padding:2px 8px;border-radius:6px}
+
+  /* 直線ゲージ（12分割：7列×2行） */
+  .gauge{display:grid;grid-template-columns:1fr repeat(5, 1.15fr) 1fr;grid-template-rows:auto auto;gap:4px;margin-top:10px}
+  .ph{background:#2c313c;border-radius:8px;padding:8px 1px;font-size:11px;font-weight:800;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:54px;line-height:1.15;text-align:center}
+  .ph small{font-size:9px;color:var(--mut);font-weight:700;margin-top:2px}
+  .ph.end{grid-row:1 / 3;background:#363c4a;font-size:13px}
+  .ph.tgt{box-shadow:inset 0 0 0 3px var(--tgt)}
+  .ph.rel{background:var(--grn);color:#02130a}
+  .ph.land{background:var(--red);color:#fff}
+  .ph.rel.land{background:linear-gradient(135deg,var(--grn) 50%,var(--red) 50%);color:#fff}
+  .ph.rel small,.ph.land small{color:inherit}
+  .ph.next{outline:3px dashed var(--acc);outline-offset:2px}
+  .gauge-h{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-top:10px;font-weight:700}
+
+  .legend{display:flex;gap:12px;justify-content:center;font-size:11px;color:var(--mut);margin-top:12px;flex-wrap:wrap}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+  .hint{color:var(--mut);font-size:14px;text-align:center;padding:18px 0}
+
+  /* 結果 */
+  .result{text-align:center;border-color:#2f4a5c}
+  .res-k{font-size:15px;font-weight:700;color:var(--mut)}
+  .res-big{font-size:38px;font-weight:900;color:var(--acc);margin:4px 0;line-height:1.15}
+  .res-lag{font-size:14px;font-weight:700;margin-top:8px}
+  .res-alt{font-size:13px;color:var(--mut);margin-top:6px}
+  .res-wait{font-size:17px;font-weight:800;padding:8px 0}
+  .btn-main{display:block;width:100%;margin-top:14px;padding:15px;border-radius:12px;
+    background:var(--acc);color:#001018;font-weight:900;font-size:16px}
+  .btn-sub{display:block;width:100%;padding:13px;border-radius:12px;background:var(--card2);
+    border:1px solid var(--line);font-weight:800;font-size:15px}
+  .btn-danger{color:var(--red)}
+
+  /* ログ */
+  .inp{width:100%;padding:12px;background:var(--card2);border:1px solid var(--line);border-radius:10px;
+    color:var(--tx);font-size:16px;font-family:inherit}
+  .inp:focus{outline:2px solid var(--acc);outline-offset:-1px}
+  textarea.inp{min-height:70px;resize:vertical}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .chip{padding:7px 12px;border-radius:999px;background:var(--card2);border:1px solid var(--line);font-size:13px;font-weight:700}
+  .chip.on{background:var(--acc);color:#001018;border-color:var(--acc)}
+  .rec-top{display:flex;align-items:flex-start;gap:10px}
+  .rec-title{flex:1;min-width:0}
+  .rec-store{font-size:16px;font-weight:900;word-break:break-all}
+  .rec-prize{font-size:13px;color:var(--mut);margin-top:2px;word-break:break-all}
+  .counter{display:flex;align-items:center;gap:6px;flex:none}
+  .counter button{width:40px;height:40px;border-radius:10px;background:var(--card2);border:1px solid var(--line);font-size:20px;font-weight:900}
+  .counter .n{min-width:44px;text-align:center;font-size:22px;font-weight:900}
+  .counter .n small{display:block;font-size:10px;color:var(--mut);font-weight:700}
+  .rec-body{margin-top:10px;background:var(--card2);border-radius:10px;padding:10px;font-size:13px;line-height:1.7}
+  .rec-body b{color:var(--acc)}
+  .rec-memo{margin-top:8px;font-size:13px;color:var(--mut);white-space:pre-wrap;word-break:break-all}
+  .rec-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--mut);margin-top:8px;background:rgba(0,0,0,0.25);padding:6px 10px;border-radius:6px}
+  .rec-actions{display:flex;gap:8px;margin-top:10px}
+  .rec-actions button{flex:1;padding:11px 6px;border-radius:10px;background:var(--card2);border:1px solid var(--line);font-size:13px;font-weight:800}
+  .rec-actions .load{background:#123447;border-color:#1f5470;color:var(--acc)}
+  .empty{text-align:center;color:var(--mut);padding:40px 10px;font-size:14px;line-height:1.8}
+
+  /* タブバー */
+  .tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;background:#12151b;border-top:1px solid var(--line);
+    padding-bottom:env(safe-area-inset-bottom);z-index:10}
+  .tab{flex:1;padding:10px 0 9px;font-size:12px;font-weight:800;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:2px}
+  .tab .ic{font-size:22px;line-height:1}
+  .tab.on{color:var(--acc)}
+
+  /* ダイアログ */
+  dialog{border:0;padding:0;background:var(--card);color:var(--tx);width:100%;max-width:520px;
+    max-height:92dvh;border-radius:18px 18px 0 0;margin:auto auto 0;overflow:auto}
+  dialog::backdrop{background:rgba(0,0,0,.65)}
+  .dlg-h{position:sticky;top:0;background:var(--card);padding:14px 16px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;z-index:1}
+  .dlg-h h2{margin:0;font-size:16px;font-weight:900}
+  .dlg-b{padding:4px 16px 16px}
+  .dlg-f{padding:12px 16px calc(14px + env(safe-area-inset-bottom));display:flex;gap:8px;border-top:1px solid var(--line);
+    position:sticky;bottom:0;background:var(--card)}
+  .dlg-f .btn-main{margin:0;flex:2}.dlg-f .btn-sub{flex:1}
+  .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .sgrid label{font-size:11px;color:var(--mut);font-weight:700;display:flex;flex-direction:column;gap:4px}
+  .sgrid select{width:100%;padding:10px 8px;background:var(--card2);border:1px solid var(--line);border-radius:10px;color:var(--tx);font-size:16px;font-family:inherit}
+  .dlg-res{margin-top:10px;padding:10px;border-radius:10px;background:#123447;color:var(--acc);font-weight:800;font-size:14px;text-align:center}
+  .dlg-date-banner{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.25);border-radius:8px;padding:8px 12px;font-size:12px;color:#bae6fd;margin-top:10px;display:flex;flex-direction:column;gap:4px}
+  .big-counter{display:flex;align-items:center;justify-content:center;gap:16px}
+  .big-counter button{width:56px;height:56px;border-radius:14px;background:var(--card2);border:1px solid var(--line);font-size:26px;font-weight:900}
+  .big-counter .n{font-size:34px;font-weight:900;min-width:60px;text-align:center}
+</style>
+</head>
+<body>
+
+<header class="appbar">
+  <h1>🪝 Oリング攻略ノート</h1>
+  <span class="sub" id="appSub"></span>
+</header>
+
+<main>
+  <!-- ========== 攻略計算 ========== -->
+  <section id="view-calc" class="view active" aria-label="攻略計算">
+    <div class="card">
+      <div class="step-h"><span class="step-no">1</span>プレイ前の環境確認</div>
+      <div class="label">クレーンの進行方向</div>
+      <div class="seg" id="dirSeg"></div>
+      <div class="label">フックの向き（入り口の方向＝🎯目標位置）</div>
+      <div id="hookClock"></div>
+    </div>
+
+    <div class="card">
+      <div class="step-h"><span class="step-no">2</span>1手目の結果入力
+        <button class="minibtn right" id="btnReset" data-act="reset">↺ やり直す</button>
+      </div>
+      <div class="label">揺れの軌道タイプ</div>
+      <div class="seg" id="swingSeg"></div>
+      <div id="angleWrap"></div>
+      <div id="timingWrap"></div>
+    </div>
+
+    <div class="card result" id="resultCard"></div>
+  </section>
+
+  <!-- ========== 記録ログ ========== -->
+  <section id="view-log" class="view" aria-label="記録ログ">
+    <div class="card">
+      <input class="inp" id="filterQ" type="search" placeholder="🔍 店舗名・景品名で絞り込み" autocomplete="off">
+      <div class="chips" id="storeChips"></div>
+    </div>
+    <div id="logList"></div>
+  </section>
+</main>
+
+<nav class="tabbar" aria-label="画面切り替え">
+  <button class="tab on" id="tab-calc" data-act="tab" data-v="calc"><span class="ic">🎯</span>攻略計算</button>
+  <button class="tab" id="tab-log" data-act="tab" data-v="log"><span class="ic">📝</span>記録ログ</button>
+</nav>
+
+<dialog id="recDlg" aria-labelledby="dlgTitle">
+  <div class="dlg-h">
+    <h2 id="dlgTitle">💾 攻略データを記録</h2>
+    <button class="minibtn" data-act="dlg-close" id="dlgCloseX">✕ 閉じる</button>
+  </div>
+  <div class="dlg-b">
+    <div id="dlgDateBanner" class="dlg-date-banner"></div>
+
+    <div class="label">店舗名</div>
+    <input class="inp" id="fStore" type="text" placeholder="例：〇〇ゲームセンター 駅前店" autocomplete="off">
+    <div class="chips" id="fStoreChips"></div>
+
+    <div class="label">景品の種類・名前</div>
+    <input class="inp" id="fPrize" type="text" placeholder="例：フィギュア / ぬいぐるみ" autocomplete="off">
+    <div class="chips" id="fPrizeChips"></div>
+
+    <div class="label">獲得個数</div>
+    <div class="big-counter">
+      <button data-act="dlg-dec" id="fCountDec" aria-label="減らす">−</button>
+      <span class="n" id="fCount">1</span>
+      <button data-act="dlg-inc" id="fCountInc" aria-label="増やす">＋</button>
+    </div>
+
+    <div class="label">台の設定＆成功周期データ</div>
+    <div id="dlgSettings"></div>
+
+    <div class="label">一言メモ（任意）</div>
+    <textarea class="inp" id="fMemo" placeholder="例：アームが弱め。3手目まで粘ればOK"></textarea>
+
+    <div id="dlgDelWrap" style="margin-top:16px"></div>
+  </div>
+  <div class="dlg-f">
+    <button class="btn-sub" data-act="dlg-close" id="dlgCancel">キャンセル</button>
+    <button class="btn-main" data-act="dlg-save" id="dlgSave">保存する</button>
+  </div>
+</dialog>
+
+<script>
+/* ================= 定数・ユーティリティ ================= */
+const LS_REC = 'oring_records_v1';
+const LS_CALC = 'oring_calc_v1';
+const DIRS = ['右 ➔ 奥', '左 ➔ 奥', '奥のみ'];
+const HNAME = {12:'奥', 3:'右', 6:'手前', 9:'左'};
+const HDIR = {
+  12:'奥 ⬆', 1:'右上 ⬈', 2:'右上 ⬈', 3:'右 ➡',
+  4:'右下 ⬊', 5:'右下 ⬊', 6:'手前 ⬇', 7:'左下 ⬋',
+  8:'左下 ⬋', 9:'左 ⬅', 10:'左上 ⬉', 11:'左上 ⬉'
+};
+const SWINGS = {cw:'↻ 右回転', ccw:'↺ 左回転', line:'↔ 一直線'};
+
+// 一直線の角度（横揺れを最頻出として初期選択）
+const ANGLES = {
+  '横':   {a:9,    A:'左',   B:'右',     ic:'↔'},
+  '縦':   {a:12,   A:'奥',   B:'手前',   ic:'↕'},
+  '右斜め':{a:1.5,  A:'右奥', B:'左手前', ic:'⤢'},
+  '左斜め':{a:10.5, A:'左奥', B:'右手前', ic:'⤡'},
+};
+const PRIZE_PRESETS = ['フィギュア','ぬいぐるみ','お菓子','雑貨','キーホルダー'];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const m12 = x => ((x - 1) % 12 + 12) % 12 + 1;
+const hourName = h => h == null ? '—' : `${h}時${HNAME[h] ? `(${HNAME[h]})` : ''}`;
+
+function formatDateTime(ts){
+  if (!ts) return '—';
+  const d = new Date(ts);
+  const Y = d.getFullYear();
+  const M = String(d.getMonth() + 1).padStart(2, '0');
+  const D = String(d.getDate()).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  return `${Y}/${M}/${D} ${h}:${m}`;
+}
+
+/* 直線周期（12分割：端A、往路5点、端B、復路5点） */
+const phaseLabel = (p, ang) => {
+  const {A, B} = ANGLES[ang] || ANGLES['横'];
+  const names = [
+    `${A}端`,
+    `${A}寄り(往)`,
+    `やや${A}(往)`,
+    `中央(往)`,
+    `やや${B}(往)`,
+    `${B}寄り(往)`,
+    `${B}端`,
+    `${B}寄り(復)`,
+    `やや${B}(復)`,
+    `中央(復)`,
+    `やや${A}(復)`,
+    `${A}寄り(復)`
+  ];
+  return names[p];
+};
+const pointName = (st, v) => v == null ? '—' : (st.swing === 'line' ? phaseLabel(v, st.angle) : hourName(v));
+
+/* フックの入り口を直感的に示すSVGアイコン */
+function hookSVG(h, size = 52){
+  const deg = (h % 12) * 30;
+  return `
+    <svg viewBox="0 0 64 64" width="${size}" height="${size}" style="transform: rotate(${deg}deg); transform-origin: center; display:block; margin:0 auto;">
+      <!-- 固定ベース台座 -->
+      <rect x="27" y="2" width="10" height="6" rx="2" fill="#8b93a3" />
+      <path d="M 32,8 L 32,16" stroke="#8b93a3" stroke-width="4" stroke-linecap="round"/>
+      <!-- フック本体（開口部が上=12時方向） -->
+      <path d="M 23,19 C 11,26 11,49 32,49 C 49,49 53,35 53,24" fill="none" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
+      <!-- 入口（開口部）への進入矢印 -->
+      <path d="M 38,7 L 38,23 M 32,17 L 38,23 L 44,17" fill="none" stroke="#f5b301" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+}
+
+/* フックの向きを直線上の位置へ投影 → 目標フェーズ候補（12分割） */
+function lineCands(st){
+  let d = Math.abs(st.hook - ANGLES[st.angle].a) % 12;
+  if (d > 6) d = 12 - d;
+  const pos = Math.round(d); // 0〜6
+  if (pos === 0) return [0];
+  if (pos === 6) return [6];
+  return [pos, 12 - pos];
+}
+const lineTarget = st => st.target != null ? st.target : lineCands(st)[0];
+
+/* 攻略計算のコア */
+function compute(st){
+  if (!st.swing || st.rel == null || st.land == null) return null;
+  if (st.swing === 'line'){
+    const t = lineTarget(st);
+    const lag = (st.land - st.rel + 12) % 12;
+    const next = (t - lag + 12) % 12;
+    // 同じ物理位置を逆方向に通過するフェーズ（端点以外）も候補として提示
+    const alt = (t % 6 !== 0) ? ((12 - t) - lag + 12) % 12 : null;
+    return {line:true, lag, next, alt, target:t};
+  }
+  if (st.swing === 'cw'){
+    const lag = (st.land - st.rel + 12) % 12;
+    return {lag, next: m12(st.hook - lag), target: st.hook};
+  }
+  const lag = (st.rel - st.land + 12) % 12;
+  return {lag, next: m12(st.hook + lag), target: st.hook};
+}
+
+/* ================= 状態 ================= */
+// 横揺れパターンが多いため初期角度を「横」に設定
+const DEFAULT_CALC = {dir:DIRS[0], hook:12, swing:null, angle:'横', rel:null, land:null, target:null, mode:'rel'};
+let S = load(LS_CALC, {...DEFAULT_CALC});
+S = {...DEFAULT_CALC, ...S};
+let records = load(LS_REC, []);
+let F = {q:'', store:''};
+let D = null; // ダイアログ編集中の下書き
+
+function load(k, def){ try { const v = JSON.parse(localStorage.getItem(k)); return v ?? def; } catch { return def; } }
+function saveCalc(){ localStorage.setItem(LS_CALC, JSON.stringify(S)); }
+function saveRecs(){ localStorage.setItem(LS_REC, JSON.stringify(records)); }
+
+/* ================= 攻略計算：描画 ================= */
+function renderCalc(){
+  const res = compute(S);
+
+  $('dirSeg').innerHTML = DIRS.map(d =>
+    `<button class="segbtn ${S.dir===d?'on':''}" data-act="dir" data-v="${d}">${d}</button>`).join('');
+
+  $('hookClock').innerHTML = clockHTML('hook', null);
+
+  $('swingSeg').innerHTML = Object.entries(SWINGS).map(([k,t]) =>
+    `<button class="segbtn ${S.swing===k?'on':''}" data-act="swing" data-v="${k}" id="swing-${k}">${t}</button>`).join('');
+
+  $('angleWrap').innerHTML = S.swing === 'line'
+    ? `<div class="label">揺れの角度（横揺れ推奨）</div><div class="seg">${Object.entries(ANGLES).map(([k,o]) =>
+        `<button class="segbtn ${S.angle===k?'on':''}" data-act="angle" data-v="${k}">${o.ic}<br>${k}</button>`).join('')}</div>`
+    : '';
+
+  // タイミング入力
+  if (!S.swing){
+    $('timingWrap').innerHTML = `<div class="hint">↑ 1手目の揺れ方を選んでください</div>`;
+  } else {
+    const line = S.swing === 'line';
+    const modes = [['rel','🟢 離した',S.rel],['land','🔴 着地',S.land]];
+    if (line) modes.push(['tgt','🎯 フック入口', lineTarget(S)]);
+    $('timingWrap').innerHTML =
+      `<div class="label">タイミング入力（${line?'直線位置':'時計盤'}を2タップ）</div>
+       <div class="seg mode">${modes.map(([k,t,v]) =>
+         `<button class="segbtn m-${k} ${S.mode===k?'on':''}" data-act="mode" data-v="${k}">${t}<small>${pointName(S,v)}</small></button>`).join('')}</div>
+       ${line ? gaugeHTML(res) : clockHTML('timing', res)}
+       <div class="legend"><span><i style="background:var(--grn)"></i>離した</span><span><i style="background:var(--red)"></i>着地</span>
+         <span><i style="background:var(--tgt)"></i>フック入口</span><span><i style="border:2px dashed var(--acc)"></i>2手目</span></div>`;
+  }
+
+  // 結果
+  let html;
+  if (res){
+    const label = res.line ? phaseLabel(res.next, S.angle) : `${res.next}時`;
+    const lagTxt = res.line ? `ラグ：＋${res.lag}フェーズ（1周＝12）` : `ラグ：＋${res.lag}時間分`;
+    html = `<div class="step-h" style="justify-content:center"><span class="step-no">3</span>計算結果</div>
+      <div class="res-k" style="margin-top:10px">2手目は</div>
+      <div class="res-big" id="resultValue">【 ${esc(label)} 】</div>
+      <div class="res-k">でボタンを離す！</div>
+      <div class="res-lag">${lagTxt}${res.lag===0?'（離した瞬間に着地）':''}　🪝入口:${esc(pointName(S,res.target))}</div>
+      ${res.alt!=null ? `<div class="res-alt">または【 ${esc(phaseLabel(res.alt,S.angle))} 】でもOK（逆方向で同位置）</div>` : ''}`;
+  } else {
+    const msg = !S.swing ? '軌道タイプを選択' : (S.rel==null ? '🟢 1手目でボタンを離した時刻をタップ' : '🔴 1手目で着地した時刻をタップ');
+    html = `<div class="step-h" style="justify-content:center"><span class="step-no">3</span>計算結果</div>
+      <div class="res-wait" style="margin-top:10px;color:var(--mut)">${msg}</div>`;
+  }
+  html += `<button class="btn-main" data-act="open-save" id="btnOpenSave">💾 この攻略データを記録する</button>`;
+  $('resultCard').innerHTML = html;
+  saveCalc();
+}
+
+function clockHTML(kind, res){
+  let h = '';
+  for (let i = 1; i <= 12; i++){
+    const a = i * Math.PI / 6, x = 50 + 39 * Math.sin(a), y = 50 - 39 * Math.cos(a);
+    const major = i % 3 === 0;
+    let cls = 'hr' + (major ? ' major' : '');
+    let sub = '';
+    if (kind === 'hook'){
+      if (i === S.hook) cls += ' tgt';
+      sub = `<small>${HDIR[i] || ''}</small>`;
+    } else {
+      if (i === S.hook) cls += ' ring';
+      if (i === S.rel) cls += ' rel';
+      if (i === S.land) cls += ' land';
+      if (res && res.next === i) cls += ' next';
+    }
+    h += `<button type="button" class="${cls}" style="left:${x}%;top:${y}%" data-act="${kind}" data-v="${i}" id="${kind}-h${i}" aria-label="${i}時">${i}${sub}</button>`;
+  }
+  const center = kind === 'hook'
+    ? `<div class="center">${hookSVG(S.hook, 56)}<div class="t">入口：${hourName(S.hook)}</div></div>`
+    : `<div class="center"><div class="big">${S.swing==='cw'?'↻':'↺'}</div><div class="t">🪝入口 ${hourName(S.hook)}</div></div>`;
+  return `<div class="clock ${kind}">${h}${center}</div>`;
+}
+
+/* 直線ゲージ（12分割：7列×2行） */
+function gaugeHTML(res){
+  const {A, B, ic} = ANGLES[S.angle];
+  const tgt = lineTarget(S);
+  const cell = (p, col, row, end) => {
+    let cls = 'ph' + (end ? ' end' : '');
+    if (p === tgt) cls += ' tgt';
+    if (p === S.rel) cls += ' rel';
+    if (p === S.land) cls += ' land';
+    if (res && (res.next === p || res.alt === p)) cls += ' next';
+    let name, sub;
+    if (end) {
+      name = `${end}端`;
+      sub = '折り返し';
+    } else {
+      const isFwd = p < 6;
+      sub = isFwd ? '往 →' : '← 復';
+      if (p === 3 || p === 9) name = '中央';
+      else if (p === 1 || p === 11) name = `${A}寄`;
+      else if (p === 2 || p === 10) name = `やや${A}`;
+      else if (p === 4 || p === 8) name = `やや${B}`;
+      else if (p === 5 || p === 7) name = `${B}寄`;
+    }
+    return `<button type="button" class="${cls}" style="grid-column:${col};${end?'':`grid-row:${row}`}" data-act="phase" data-v="${p}" id="phase-${p}">${name}<small>${sub}</small></button>`;
+  };
+
+  return `<div class="gauge-h"><span>${ic} ${S.angle}揺れ：${A}端 ⇄ ${B}端（12分割）</span><span>往路/復路</span></div>
+    <div class="gauge">
+      ${cell(0, 1, 0, A)}
+      ${cell(1, 2, 1)} ${cell(2, 3, 1)} ${cell(3, 4, 1)} ${cell(4, 5, 1)} ${cell(5, 6, 1)}
+      ${cell(6, 7, 0, B)}
+      ${cell(11, 2, 2)} ${cell(10, 3, 2)} ${cell(9, 4, 2)} ${cell(8, 5, 2)} ${cell(7, 6, 2)}
+    </div>`;
+}
+
+/* ================= 攻略計算：操作 ================= */
+function setPoint(v){
+  if (S.mode === 'rel'){ S.rel = v; S.mode = 'land'; }
+  else if (S.mode === 'land'){ S.land = v; S.mode = 'rel'; }
+  else if (S.mode === 'tgt'){ S.target = v; S.mode = S.rel == null ? 'rel' : (S.land == null ? 'land' : 'rel'); }
+}
+function changeSwing(st, v){
+  const wasLine = st.swing === 'line', isLine = v === 'line';
+  if (st.swing && wasLine !== isLine){ st.rel = null; st.land = null; st.target = null; if ('mode' in st) st.mode = 'rel'; }
+  st.swing = v;
+}
+
+/* ================= 記録ログ：描画 ================= */
+function storeList(){
+  const seen = new Map();
+  [...records].sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0)).forEach(r => { if (r.store && !seen.has(r.store)) seen.set(r.store, 1); });
+  return [...seen.keys()];
+}
+
+function summaryHTML(r){
+  const res = compute(r);
+  const sw = r.swing ? SWINGS[r.swing] + (r.swing==='line' ? `（${r.angle}）` : '') : '未入力';
+  return `進行：${esc(r.dir)}　フック入口：${hourName(r.hook)}<br>
+    軌道：${sw}<br>
+    1手目：🟢${esc(pointName(r,r.rel))} で離す → 🔴${esc(pointName(r,r.land))} にかかった
+    ${res ? `<br>2手目推奨：<b>${esc(res.line ? phaseLabel(res.next,r.angle) : res.next+'時')}</b>（${res.line?'ラグ+'+res.lag+'フェーズ':'ラグ+'+res.lag+'時間'}）` : ''}`;
+}
+
+function renderLog(){
+  const stores = storeList();
+  $('storeChips').innerHTML = stores.length
+    ? [`<button class="chip ${F.store===''?'on':''}" data-act="fstore" data-v="">すべて</button>`]
+        .concat(stores.map(s => `<button class="chip ${F.store===s?'on':''}" data-act="fstore" data-v="${esc(s)}">${esc(s)}</button>`)).join('')
+    : '';
+  const q = F.q.trim().toLowerCase();
+  const list = records
+    .filter(r => !F.store || r.store === F.store)
+    .filter(r => !q || (r.store + ' ' + r.prize).toLowerCase().includes(q))
+    .sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
+
+  const total = records.reduce((s,r) => s + (r.count||0), 0);
+  $('appSub').textContent = `${records.length}件・累計${total}個`;
+
+  if (!records.length){
+    $('logList').innerHTML = `<div class="empty">まだ記録がありません。<br>「🎯 攻略計算」で計算後、<br>「💾 この攻略データを記録する」から保存できます。</div>`;
+    return;
+  }
+  if (!list.length){ $('logList').innerHTML = `<div class="empty">条件に一致する記録がありません</div>`; return; }
+
+  $('logList').innerHTML = list.map(r => {
+    const isEdited = r.createdAt && r.updatedAt && Math.abs(r.updatedAt - r.createdAt) > 2000;
+    return `
+    <article class="card" data-id="${r.id}">
+      <div class="rec-top">
+        <div class="rec-title">
+          <div class="rec-store">🏪 ${esc(r.store || '（店舗名なし）')}</div>
+          <div class="rec-prize">🎁 ${esc(r.prize || '景品未入力')}</div>
+        </div>
+        <div class="counter">
+          <button data-act="dec" data-id="${r.id}" aria-label="獲得数を減らす">−</button>
+          <span class="n">${r.count||0}<small>個</small></span>
+          <button data-act="inc" data-id="${r.id}" aria-label="獲得数を増やす">＋</button>
+        </div>
+      </div>
+      <div class="rec-body">${summaryHTML(r)}</div>
+      ${r.memo ? `<div class="rec-memo">📝 ${esc(r.memo)}</div>` : ''}
+      <div class="rec-meta">
+        <span>📅 記録：${formatDateTime(r.createdAt || r.updatedAt)}</span>
+        ${isEdited ? `<span>✏️ 編集：${formatDateTime(r.updatedAt)}</span>` : ''}
+      </div>
+      <div class="rec-actions">
+        <button data-act="edit" data-id="${r.id}">✏️ 編集</button>
+        <button class="load" data-act="load" data-id="${r.id}">📥 計算機に読み込む</button>
+      </div>
+    </article>`;
+  }).join('');
+}
+
+/* ================= ダイアログ ================= */
+function openDlg(rec){
+  const now = Date.now();
+  D = rec ? {...rec} : {
+    id:null, store:'', prize:'', count:1, memo:'',
+    dir:S.dir, hook:S.hook, swing:S.swing, angle:S.angle, rel:S.rel, land:S.land, target:S.target,
+    createdAt: now, updatedAt: now
+  };
+  $('dlgTitle').textContent = rec ? '✏️ 記録を編集' : '💾 攻略データを記録';
+
+  // 日時の自動入力バナー表示
+  if (rec){
+    $('dlgDateBanner').innerHTML = `
+      <div>📅 初回記録：<strong>${formatDateTime(D.createdAt || D.updatedAt)}</strong></div>
+      <div>✏️ 最終編集：<strong>${formatDateTime(D.updatedAt)}</strong>（今回保存時に自動更新されます）</div>`;
+  } else {
+    $('dlgDateBanner').innerHTML = `
+      <div>📅 記録日時：<strong>${formatDateTime(now)}</strong>（保存時に自動入力）</div>`;
+  }
+
+  $('fStore').value = D.store; $('fPrize').value = D.prize; $('fMemo').value = D.memo || '';
+  $('fCount').textContent = D.count;
+  $('fStoreChips').innerHTML = storeList().slice(0,10).map(s => `<button class="chip" data-act="pick-store" data-v="${esc(s)}">${esc(s)}</button>`).join('');
+  $('fPrizeChips').innerHTML = PRIZE_PRESETS.map(s => `<button class="chip" data-act="pick-prize" data-v="${esc(s)}">${esc(s)}</button>`).join('');
+  $('dlgDelWrap').innerHTML = rec ? `<button class="btn-sub btn-danger" data-act="dlg-del" id="dlgDelete">🗑 この記録を削除</button>` : '';
+  renderDlgSettings();
+  $('recDlg').showModal();
+}
+
+function renderDlgSettings(){
+  const opt = (list, val) => list.map(([v,t]) => `<option value="${esc(v)}" ${String(v)===String(val ?? '')?'selected':''}>${esc(t)}</option>`).join('');
+  const hours = [...Array(12)].map((_,i) => [i+1, hourName(i+1)]);
+  const line = D.swing === 'line';
+  const pts = line ? [...Array(12)].map((_,i) => [i, phaseLabel(i, D.angle)]) : hours;
+  const none = [['', '未入力']];
+  const res = compute(D);
+  $('dlgSettings').innerHTML = `
+    <div class="sgrid">
+      <label>クレーン進行方向<select data-f="dir">${opt(DIRS.map(d=>[d,d]), D.dir)}</select></label>
+      <label>フックの向き（入口）<select data-f="hook">${opt(hours, D.hook)}</select></label>
+      <label>揺れの軌道<select data-f="swing">${opt(none.concat(Object.entries(SWINGS)), D.swing)}</select></label>
+      ${line ? `<label>揺れの角度<select data-f="angle">${opt(Object.keys(ANGLES).map(k=>[k,k]), D.angle)}</select></label>` : '<span></span>'}
+      ${D.swing ? `
+      <label>🟢 何時/位置で離した<select data-f="rel">${opt(none.concat(pts), D.rel)}</select></label>
+      <label>🔴 何時/位置にかかった<select data-f="land">${opt(none.concat(pts), D.land)}</select></label>
+      ${line ? `<label>🪝 目標入口位置<select data-f="target">${opt([['','自動（フック方向）']].concat(pts), D.target)}</select></label>` : ''}` : ''}
+    </div>
+    ${res ? `<div class="dlg-res">→ 2手目推奨：${esc(res.line ? phaseLabel(res.next,D.angle) : res.next+'時')}（ラグ+${res.lag}${res.line?'フェーズ':'時間'}）</div>` : ''}`;
+}
+
+function saveDlg(){
+  D.store = $('fStore').value.trim();
+  D.prize = $('fPrize').value.trim();
+  D.memo = $('fMemo').value.trim();
+  const now = Date.now();
+  if (D.id){
+    const i = records.findIndex(r => r.id === D.id);
+    if (i >= 0){
+      records[i] = {...D, createdAt: D.createdAt || records[i].createdAt || now, updatedAt: now};
+    }
+  } else {
+    records.push({...D, id: now.toString(36) + Math.random().toString(36).slice(2,6), createdAt: now, updatedAt: now});
+  }
+  saveRecs();
+  $('recDlg').close();
+  renderLog();
+  if (!D.id) switchTab('log');
+}
+
+/* ================= タブ ================= */
+function switchTab(t){
+  ['calc','log'].forEach(k => {
+    $('view-' + k).classList.toggle('active', k === t);
+    $('tab-' + k).classList.toggle('on', k === t);
+  });
+  if (t === 'log') renderLog();
+  window.scrollTo({top:0});
+}
+
+/* ================= イベント ================= */
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const act = el.dataset.act, v = el.dataset.v, id = el.dataset.id;
+  const rec = id ? records.find(r => r.id === id) : null;
+
+  switch (act){
+    case 'tab': switchTab(v); return;
+    // 計算
+    case 'dir': S.dir = v; break;
+    case 'hook': S.hook = +v; S.target = null; break;
+    case 'swing': changeSwing(S, v); break;
+    case 'angle': S.angle = v; S.target = null; break;
+    case 'mode': S.mode = v; break;
+    case 'timing': case 'phase': setPoint(+v); break;
+    case 'reset': S.rel = null; S.land = null; S.target = null; S.mode = 'rel'; break;
+    case 'open-save': openDlg(null); return;
+    // ログ
+    case 'fstore': F.store = v; renderLog(); return;
+    case 'inc': case 'dec':
+      if (rec){
+        rec.count = Math.max(0, (rec.count||0) + (act==='inc'?1:-1));
+        rec.updatedAt = Date.now();
+        if (!rec.createdAt) rec.createdAt = rec.updatedAt;
+        saveRecs();
+        renderLog();
+      }
+      return;
+    case 'edit': if (rec) openDlg(rec); return;
+    case 'load':
+      if (rec){
+        S = {...DEFAULT_CALC, dir:rec.dir, hook:rec.hook, swing:rec.swing, angle:rec.angle||'横',
+             rel:rec.rel, land:rec.land, target:rec.target ?? null, mode:'rel'};
+        renderCalc(); switchTab('calc');
+      }
+      return;
+    // ダイアログ
+    case 'dlg-close': $('recDlg').close(); return;
+    case 'dlg-inc': case 'dlg-dec':
+      D.count = Math.max(0, D.count + (act==='dlg-inc'?1:-1)); $('fCount').textContent = D.count; return;
+    case 'pick-store': $('fStore').value = v; return;
+    case 'pick-prize': $('fPrize').value = v; return;
+    case 'dlg-save': saveDlg(); return;
+    case 'dlg-del':
+      if (confirm('この記録を削除しますか？')){
+        records = records.filter(r => r.id !== D.id); saveRecs(); $('recDlg').close(); renderLog();
+      }
+      return;
+    default: return;
+  }
+  renderCalc();
+});
+
+// ダイアログ内のセレクト変更
+$('dlgSettings').addEventListener('change', e => {
+  const f = e.target.dataset.f; if (!f) return;
+  const raw = e.target.value;
+  if (f === 'swing') changeSwing(D, raw || null);
+  else if (['hook','rel','land','target'].includes(f)) {
+    D[f] = raw === '' ? null : +raw;
+    if (f === 'hook') D.target = null;
+  }
+  else { D[f] = raw; if (f === 'angle') D.target = null; }
+  renderDlgSettings();
+});
+
+// 背景タップでダイアログを閉じる
+$('recDlg').addEventListener('click', e => { if (e.target === $('recDlg')) $('recDlg').close(); });
+
+$('filterQ').addEventListener('input', e => { F.q = e.target.value; renderLog(); });
+
+/* ================= 起動 ================= */
+renderCalc();
+renderLog();
+</script>
+</body>
+</html>
