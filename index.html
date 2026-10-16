@@ -6,13 +6,13 @@
 <meta name="theme-color" content="#0e1014">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="description" content="クレーンゲームのOリング・固定フック設定を2タップで攻略計算し、店舗ごとの成功データを記録できるモバイルアプリ。">
+<meta name="description" content="クレーンゲームのOリング・固定フック設定を2タップで攻略計算し、店舗ごとの成功周期・お得額データを記録できるモバイルアプリ。">
 <title>Oリング攻略ノート</title>
 <style>
   :root{
     --bg:#0e1014; --card:#181b22; --card2:#21252e; --line:#2c313c;
     --tx:#eef1f6; --mut:#8b93a3;
-    --acc:#38bdf8; --grn:#22c55e; --red:#ef4444; --tgt:#f5b301;
+    --acc:#38bdf8; --grn:#22c55e; --red:#ef4444; --tgt:#f5b301; --gold:#fbbf24;
     --r:14px;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -27,16 +27,17 @@
     padding:calc(10px + env(safe-area-inset-top)) 16px 10px;border-bottom:1px solid var(--line);
     display:flex;align-items:center;justify-content:space-between}
   .appbar h1{font-size:17px;margin:0;font-weight:800;letter-spacing:.02em}
-  .appbar .sub{font-size:12px;color:var(--mut)}
+  .appbar .sub{font-size:11px;color:var(--mut);text-align:right}
   main{max-width:520px;margin:0 auto;padding:12px}
   .view{display:none}.view.active{display:block}
 
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
   .step-h{display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px}
   .step-no{width:24px;height:24px;border-radius:50%;background:var(--acc);color:#001018;
-    display:grid;place-items:center;font-size:13px;flex:none}
+    display:grid;place-items:center;font-size:13px;flex:none;font-weight:900}
   .step-h .right{margin-left:auto}
   .label{font-size:12px;color:var(--mut);margin:14px 0 6px;font-weight:700}
+  .label.first{margin-top:8px}
 
   .seg{display:flex;gap:6px}
   .segbtn{flex:1;padding:12px 4px;background:var(--card2);border:1px solid var(--line);
@@ -66,14 +67,14 @@
   .center{position:absolute;inset:22%;display:flex;flex-direction:column;align-items:center;
     justify-content:center;text-align:center;pointer-events:none}
   .center .big{font-size:32px;line-height:1}
-  .center .t{font-size:12px;color:var(--tx);margin-top:4px;font-weight:800;background:rgba(0,0,0,0.4);padding:2px 8px;border-radius:6px}
+  .center .t{font-size:12px;color:var(--tx);margin-top:4px;font-weight:800;background:rgba(0,0,0,0.5);padding:2px 8px;border-radius:6px}
 
   /* 直線ゲージ（12分割：7列×2行） */
-  .gauge{display:grid;grid-template-columns:1fr repeat(5, 1.15fr) 1fr;grid-template-rows:auto auto;gap:4px;margin-top:10px}
-  .ph{background:#2c313c;border-radius:8px;padding:8px 1px;font-size:11px;font-weight:800;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:54px;line-height:1.15;text-align:center}
-  .ph small{font-size:9px;color:var(--mut);font-weight:700;margin-top:2px}
-  .ph.end{grid-row:1 / 3;background:#363c4a;font-size:13px}
+  .gauge{display:grid;grid-template-columns:1fr repeat(5, 1.15fr) 1fr;grid-template-rows:auto auto;gap:3px;margin-top:10px}
+  .ph{background:#2c313c;border-radius:8px;padding:6px 0;font-size:10px;font-weight:800;letter-spacing:-0.04em;word-break:keep-all;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;line-height:1.15;text-align:center}
+  .ph small{font-size:8.5px;color:var(--mut);font-weight:700;margin-top:2px;letter-spacing:0}
+  .ph.end{grid-row:1 / 3;background:#363c4a;font-size:12px;letter-spacing:0}
   .ph.tgt{box-shadow:inset 0 0 0 3px var(--tgt)}
   .ph.rel{background:var(--grn);color:#02130a}
   .ph.land{background:var(--red);color:#fff}
@@ -86,37 +87,83 @@
   .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
   .hint{color:var(--mut);font-size:14px;text-align:center;padding:18px 0}
 
+  /* 入力＆カウンター */
+  .inp{width:100%;padding:11px 12px;background:var(--card2);border:1px solid var(--line);border-radius:10px;
+    color:var(--tx);font-size:15px;font-family:inherit}
+  .inp:focus{outline:2px solid var(--acc);outline-offset:-1px}
+  textarea.inp{min-height:70px;resize:vertical}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .chip{padding:6px 11px;border-radius:999px;background:var(--card2);border:1px solid var(--line);font-size:12px;font-weight:700}
+  .chip.on{background:var(--acc);color:#001018;border-color:var(--acc)}
+
+  .c-row{display:flex;align-items:center;justify-content:space-between;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-top:6px}
+  .c-row .c-label{font-size:14px;font-weight:800}
+  .counter{display:flex;align-items:center;gap:8px}
+  .counter button{width:38px;height:38px;border-radius:10px;background:#2c313c;border:1px solid var(--line);font-size:20px;font-weight:900}
+  .counter .n{min-width:36px;text-align:center;font-size:20px;font-weight:900}
+
+  /* 収支・お得度グリッド＆スライダー */
+  .money-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .money-col label{display:block;font-size:11px;color:var(--mut);font-weight:700;margin-bottom:4px}
+  .money-unit{position:relative}
+  .money-unit input{padding-right:28px}
+  .money-unit .u{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--mut);pointer-events:none}
+  
+  .slider-wrap{margin-top:8px;padding:2px 2px}
+  .range-slider{
+    -webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;
+    background:#2c313c;border:1px solid var(--line);outline:none;display:block
+  }
+  .range-slider::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:22px;height:22px;border-radius:50%;
+    background:var(--acc);cursor:pointer;box-shadow:0 0 6px rgba(56,189,248,0.5)
+  }
+  .range-slider::-moz-range-thumb{
+    width:22px;height:22px;border-radius:50%;background:var(--acc);cursor:pointer;border:none
+  }
+
+  .quick-cost{display:flex;gap:4px;margin-top:6px}
+  .quick-cost button{flex:1;padding:5px 0;background:var(--card2);border:1px solid var(--line);border-radius:6px;font-size:11px;font-weight:700;color:var(--tx)}
+
+  .profit-badge{margin-top:8px;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:800;text-align:center;background:rgba(255,255,255,0.04);border:1px solid var(--line)}
+  .profit-badge.plus{background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.3);color:#4ade80}
+  .profit-badge.minus{background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.25);color:#fca5a5}
+
   /* 結果 */
   .result{text-align:center;border-color:#2f4a5c}
   .res-k{font-size:15px;font-weight:700;color:var(--mut)}
-  .res-big{font-size:38px;font-weight:900;color:var(--acc);margin:4px 0;line-height:1.15}
+  .res-big{font-size:36px;font-weight:900;color:var(--acc);margin:4px 0;line-height:1.15}
   .res-lag{font-size:14px;font-weight:700;margin-top:8px}
   .res-alt{font-size:13px;color:var(--mut);margin-top:6px}
-  .res-wait{font-size:17px;font-weight:800;padding:8px 0}
-  .btn-main{display:block;width:100%;margin-top:14px;padding:15px;border-radius:12px;
-    background:var(--acc);color:#001018;font-weight:900;font-size:16px}
+  .res-wait{font-size:16px;font-weight:800;padding:8px 0}
+
+  .btn-win{display:block;width:100%;margin-top:14px;padding:16px;border-radius:12px;
+    background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#261800;font-weight:900;font-size:18px;box-shadow:0 4px 14px rgba(245,158,11,0.3)}
+  .btn-main{display:block;width:100%;margin-top:8px;padding:14px;border-radius:12px;
+    background:var(--card2);border:1px solid var(--line);color:var(--tx);font-weight:800;font-size:15px}
   .btn-sub{display:block;width:100%;padding:13px;border-radius:12px;background:var(--card2);
     border:1px solid var(--line);font-weight:800;font-size:15px}
   .btn-danger{color:var(--red)}
 
-  /* ログ */
-  .inp{width:100%;padding:12px;background:var(--card2);border:1px solid var(--line);border-radius:10px;
-    color:var(--tx);font-size:16px;font-family:inherit}
-  .inp:focus{outline:2px solid var(--acc);outline-offset:-1px}
-  textarea.inp{min-height:70px;resize:vertical}
-  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-  .chip{padding:7px 12px;border-radius:999px;background:var(--card2);border:1px solid var(--line);font-size:13px;font-weight:700}
-  .chip.on{background:var(--acc);color:#001018;border-color:var(--acc)}
-  .rec-top{display:flex;align-items:flex-start;gap:10px}
+  /* ログカード */
+  .rec-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
   .rec-title{flex:1;min-width:0}
-  .rec-store{font-size:16px;font-weight:900;word-break:break-all}
-  .rec-prize{font-size:13px;color:var(--mut);margin-top:2px;word-break:break-all}
-  .counter{display:flex;align-items:center;gap:6px;flex:none}
-  .counter button{width:40px;height:40px;border-radius:10px;background:var(--card2);border:1px solid var(--line);font-size:20px;font-weight:900}
-  .counter .n{min-width:44px;text-align:center;font-size:22px;font-weight:900}
-  .counter .n small{display:block;font-size:10px;color:var(--mut);font-weight:700}
-  .rec-body{margin-top:10px;background:var(--card2);border-radius:10px;padding:10px;font-size:13px;line-height:1.7}
-  .rec-body b{color:var(--acc)}
+  .rec-store{font-size:14px;color:var(--mut);font-weight:700;word-break:break-all}
+  .rec-prize{font-size:18px;font-weight:900;color:#ffffff;margin-top:3px;word-break:break-all;line-height:1.25}
+  .rec-count-badge{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:14px;font-weight:800;color:var(--tx);white-space:nowrap;flex:none}
+  .rec-count-badge b{font-size:18px;color:var(--gold);margin:0 2px}
+
+  /* 成功周期ハイライトボックス */
+  .rec-success-box{margin-top:10px;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.3);border-radius:10px;padding:10px 12px}
+  .rec-success-box .stitle{font-size:11px;color:var(--acc);font-weight:800;display:flex;align-items:center;gap:4px}
+  .rec-success-box .smain{font-size:17px;font-weight:900;color:#e0f2fe;margin:3px 0}
+  .rec-success-box .ssub{font-size:12px;color:var(--mut);line-height:1.5}
+
+  .rec-money-box{margin-top:8px;background:var(--card2);border-radius:8px;padding:8px 12px;font-size:12px;display:flex;justify-content:space-between;align-items:center}
+  .rec-money-box .profit{font-weight:800;font-size:13px}
+  .rec-money-box .profit.plus{color:#4ade80}
+  .rec-money-box .profit.minus{color:#fca5a5}
+
   .rec-memo{margin-top:8px;font-size:13px;color:var(--mut);white-space:pre-wrap;word-break:break-all}
   .rec-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--mut);margin-top:8px;background:rgba(0,0,0,0.25);padding:6px 10px;border-radius:6px}
   .rec-actions{display:flex;gap:8px;margin-top:10px}
@@ -131,6 +178,12 @@
   .tab .ic{font-size:22px;line-height:1}
   .tab.on{color:var(--acc)}
 
+  /* トースト通知 */
+  .toast{position:fixed;top:calc(16px + env(safe-area-inset-top));left:50%;transform:translateX(-50%) translateY(-100px);
+    background:#047857;color:#fff;font-weight:800;font-size:14px;padding:12px 20px;border-radius:999px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:100;transition:transform .3s ease;pointer-events:none}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+
   /* ダイアログ */
   dialog{border:0;padding:0;background:var(--card);color:var(--tx);width:100%;max-width:520px;
     max-height:92dvh;border-radius:18px 18px 0 0;margin:auto auto 0;overflow:auto}
@@ -141,27 +194,81 @@
   .dlg-b{padding:4px 16px 16px}
   .dlg-f{padding:12px 16px calc(14px + env(safe-area-inset-bottom));display:flex;gap:8px;border-top:1px solid var(--line);
     position:sticky;bottom:0;background:var(--card)}
-  .dlg-f .btn-main{margin:0;flex:2}.dlg-f .btn-sub{flex:1}
+  .dlg-f .btn-win{margin:0;flex:2;padding:14px;font-size:16px}
+  .dlg-f .btn-sub{flex:1}
   .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .sgrid label{font-size:11px;color:var(--mut);font-weight:700;display:flex;flex-direction:column;gap:4px}
   .sgrid select{width:100%;padding:10px 8px;background:var(--card2);border:1px solid var(--line);border-radius:10px;color:var(--tx);font-size:16px;font-family:inherit}
   .dlg-res{margin-top:10px;padding:10px;border-radius:10px;background:#123447;color:var(--acc);font-weight:800;font-size:14px;text-align:center}
   .dlg-date-banner{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.25);border-radius:8px;padding:8px 12px;font-size:12px;color:#bae6fd;margin-top:10px;display:flex;flex-direction:column;gap:4px}
-  .big-counter{display:flex;align-items:center;justify-content:center;gap:16px}
-  .big-counter button{width:56px;height:56px;border-radius:14px;background:var(--card2);border:1px solid var(--line);font-size:26px;font-weight:900}
-  .big-counter .n{font-size:34px;font-weight:900;min-width:60px;text-align:center}
 </style>
 </head>
 <body>
 
 <header class="appbar">
   <h1>🪝 Oリング攻略ノート</h1>
-  <span class="sub" id="appSub"></span>
+  <div class="sub" id="appSub"></div>
 </header>
+
+<div class="toast" id="toast"></div>
 
 <main>
   <!-- ========== 攻略計算 ========== -->
   <section id="view-calc" class="view active" aria-label="攻略計算">
+    <!-- プレイ基本情報入力 -->
+    <div class="card" id="playInfoCard">
+      <div class="step-h">
+        <span>🎮 プレイ基本情報</span>
+        <button class="minibtn right" data-act="reset-item" id="btnResetItem">🔄 台・景品リセット</button>
+      </div>
+      
+      <div class="label first">店舗名</div>
+      <input class="inp" id="pStore" type="text" placeholder="例：〇〇ゲームセンター 駅前店" autocomplete="off">
+      <div class="chips" id="pStoreChips"></div>
+
+      <div class="label">景品名・種類</div>
+      <input class="inp" id="pPrize" type="text" placeholder="例：人気フィギュア / ぬいぐるみ" autocomplete="off">
+      <div class="chips" id="pPrizeChips"></div>
+
+      <div class="c-row">
+        <span class="c-label">狙う個数 <small style="font-size:11px;color:var(--mut);font-weight:normal">（獲得予定）</small></span>
+        <div class="counter">
+          <button data-act="pcount-dec" id="btnPCountDec" aria-label="減らす">−</button>
+          <span class="n" id="pCount">1</span>
+          <button data-act="pcount-inc" id="btnPCountInc" aria-label="増やす">＋</button>
+        </div>
+      </div>
+
+      <div class="label">💰 収支・お得度計算（任意）</div>
+      <div class="money-grid">
+        <div class="money-col">
+          <label>投入金額（100円単位）</label>
+          <div class="money-unit">
+            <input class="inp" id="pCost" type="number" step="100" min="0" max="50000" inputmode="numeric" placeholder="0">
+            <span class="u">円</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" id="pCostSlider" min="0" max="5000" step="100" value="0" class="range-slider">
+          </div>
+          <div class="quick-cost">
+            <button data-act="step-cost" data-v="-100">−100</button>
+            <button data-act="step-cost" data-v="100">＋100</button>
+            <button data-act="step-cost" data-v="500">＋500</button>
+            <button data-act="clear-cost">クリア</button>
+          </div>
+        </div>
+        <div class="money-col">
+          <label>景品の推定価値（1個あたり）</label>
+          <div class="money-unit">
+            <input class="inp" id="pValue" type="number" step="100" inputmode="numeric" placeholder="2500">
+            <span class="u">円</span>
+          </div>
+        </div>
+      </div>
+      <div id="pProfitBadge" class="profit-badge">お得額：—</div>
+    </div>
+
+    <!-- Step 1：環境確認 -->
     <div class="card">
       <div class="step-h"><span class="step-no">1</span>プレイ前の環境確認</div>
       <div class="label">クレーンの進行方向</div>
@@ -170,8 +277,9 @@
       <div id="hookClock"></div>
     </div>
 
+    <!-- Step 2：1手目測定 -->
     <div class="card">
-      <div class="step-h"><span class="step-no">2</span>1手目の結果入力
+      <div class="step-h"><span class="step-no">2</span>1手目の結果入力（周期測定）
         <button class="minibtn right" id="btnReset" data-act="reset">↺ やり直す</button>
       </div>
       <div class="label">揺れの軌道タイプ</div>
@@ -180,6 +288,7 @@
       <div id="timingWrap"></div>
     </div>
 
+    <!-- Step 3：計算結果 ＆ 記録アクション -->
     <div class="card result" id="resultCard"></div>
   </section>
 
@@ -198,6 +307,7 @@
   <button class="tab" id="tab-log" data-act="tab" data-v="log"><span class="ic">📝</span>記録ログ</button>
 </nav>
 
+<!-- 編集・詳細記録ダイアログ -->
 <dialog id="recDlg" aria-labelledby="dlgTitle">
   <div class="dlg-h">
     <h2 id="dlgTitle">💾 攻略データを記録</h2>
@@ -214,24 +324,48 @@
     <input class="inp" id="fPrize" type="text" placeholder="例：フィギュア / ぬいぐるみ" autocomplete="off">
     <div class="chips" id="fPrizeChips"></div>
 
-    <div class="label">獲得個数</div>
-    <div class="big-counter">
-      <button data-act="dlg-dec" id="fCountDec" aria-label="減らす">−</button>
-      <span class="n" id="fCount">1</span>
-      <button data-act="dlg-inc" id="fCountInc" aria-label="増やす">＋</button>
+    <div class="c-row" style="margin-top:12px">
+      <span class="c-label">獲得個数</span>
+      <div class="counter">
+        <button data-act="dlg-dec" id="fCountDec" aria-label="減らす">−</button>
+        <span class="n" id="fCount">1</span>
+        <button data-act="dlg-inc" id="fCountInc" aria-label="増やす">＋</button>
+      </div>
     </div>
+
+    <div class="label">💰 収支・お得度計算</div>
+    <div class="money-grid">
+      <div class="money-col">
+        <label>投入金額（100円単位）</label>
+        <div class="money-unit">
+          <input class="inp" id="fCost" type="number" step="100" min="0" inputmode="numeric" placeholder="0">
+          <span class="u">円</span>
+        </div>
+        <div class="slider-wrap">
+          <input type="range" id="fCostSlider" min="0" max="5000" step="100" value="0" class="range-slider">
+        </div>
+      </div>
+      <div class="money-col">
+        <label>推定価値（1個）</label>
+        <div class="money-unit">
+          <input class="inp" id="fValue" type="number" step="100" inputmode="numeric" placeholder="2500">
+          <span class="u">円</span>
+        </div>
+      </div>
+    </div>
+    <div id="dlgProfitBadge" class="profit-badge">お得額：—</div>
 
     <div class="label">台の設定＆成功周期データ</div>
     <div id="dlgSettings"></div>
 
     <div class="label">一言メモ（任意）</div>
-    <textarea class="inp" id="fMemo" placeholder="例：アームが弱め。3手目まで粘ればOK"></textarea>
+    <textarea class="inp" id="fMemo" placeholder="例：奥移動の際に若干左に流れるクセがある"></textarea>
 
     <div id="dlgDelWrap" style="margin-top:16px"></div>
   </div>
   <div class="dlg-f">
     <button class="btn-sub" data-act="dlg-close" id="dlgCancel">キャンセル</button>
-    <button class="btn-main" data-act="dlg-save" id="dlgSave">保存する</button>
+    <button class="btn-win" data-act="dlg-save" id="dlgSave">保存する</button>
   </div>
 </dialog>
 
@@ -252,10 +386,10 @@ const SWINGS = {cw:'↻ 右回転', ccw:'↺ 左回転', line:'↔ 一直線'};
 const ANGLES = {
   '横':   {a:9,    A:'左',   B:'右',     ic:'↔'},
   '縦':   {a:12,   A:'奥',   B:'手前',   ic:'↕'},
-  '右斜め':{a:1.5,  A:'右奥', B:'左手前', ic:'⤢'},
-  '左斜め':{a:10.5, A:'左奥', B:'右手前', ic:'⤡'},
+  '右斜め':{a:7.5,  A:'左',   B:'右',     ic:'⤢'},
+  '左斜め':{a:10.5, A:'左',   B:'右',     ic:'⤡'},
 };
-const PRIZE_PRESETS = ['フィギュア','ぬいぐるみ','お菓子','雑貨','キーホルダー'];
+const PRIZE_PRESETS = ['フィギュア','ぬいぐるみ','お菓子','雑貨','キーホルダー','クッション'];
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -273,38 +407,56 @@ function formatDateTime(ts){
   return `${Y}/${M}/${D} ${h}:${m}`;
 }
 
+function calcProfit(cost, value, count){
+  const c = parseInt(cost, 10);
+  const v = parseInt(value, 10);
+  const n = parseInt(count, 10) || 1;
+  if (isNaN(c) && isNaN(v)) return null;
+  const totCost = isNaN(c) ? 0 : c;
+  const totVal = isNaN(v) ? 0 : (v * n);
+  return totVal - totCost;
+}
+
+function profitBadgeHTML(cost, value, count){
+  const p = calcProfit(cost, value, count);
+  if (p == null) return `<div class="profit-badge">お得額：投入金額と推定価値を入力で自動計算</div>`;
+  const costNum = parseInt(cost, 10) || 0;
+  const valNum = parseInt(value, 10) || 0;
+  const n = parseInt(count, 10) || 1;
+  if (p > 0) return `<div class="profit-badge plus">🎉 ＋${p.toLocaleString()}円 お得！（価値: ${(valNum*n).toLocaleString()}円 − 投入: ${costNum.toLocaleString()}円）</div>`;
+  if (p === 0) return `<div class="profit-badge">⚖️ ±0円 トントン</div>`;
+  return `<div class="profit-badge minus">💧 −${Math.abs(p).toLocaleString()}円（投入: ${costNum.toLocaleString()}円 / 価値: ${(valNum*n).toLocaleString()}円）</div>`;
+}
+
 /* 直線周期（12分割：端A、往路5点、端B、復路5点） */
 const phaseLabel = (p, ang) => {
   const {A, B} = ANGLES[ang] || ANGLES['横'];
   const names = [
     `${A}端`,
-    `${A}寄り(往)`,
-    `やや${A}(往)`,
-    `中央(往)`,
-    `やや${B}(往)`,
-    `${B}寄り(往)`,
+    `${A}端直後(→)`,
+    `中央直前(→)`,
+    `中央(→)`,
+    `中央直後(→)`,
+    `${B}端直前(→)`,
     `${B}端`,
-    `${B}寄り(復)`,
-    `やや${B}(復)`,
-    `中央(復)`,
-    `やや${A}(復)`,
-    `${A}寄り(復)`
+    `${B}端直後(←)`,
+    `中央直前(←)`,
+    `中央(←)`,
+    `中央直後(←)`,
+    `${A}端直前(←)`
   ];
   return names[p];
 };
 const pointName = (st, v) => v == null ? '—' : (st.swing === 'line' ? phaseLabel(v, st.angle) : hourName(v));
 
-/* フックの入り口を直感的に示すSVGアイコン */
+/* フックの入り口を示す専用SVGアイコン */
 function hookSVG(h, size = 52){
   const deg = (h % 12) * 30;
   return `
     <svg viewBox="0 0 64 64" width="${size}" height="${size}" style="transform: rotate(${deg}deg); transform-origin: center; display:block; margin:0 auto;">
-      <!-- 固定ベース台座 -->
       <rect x="27" y="2" width="10" height="6" rx="2" fill="#8b93a3" />
       <path d="M 32,8 L 32,16" stroke="#8b93a3" stroke-width="4" stroke-linecap="round"/>
-      <!-- フック本体（開口部が上=12時方向） -->
       <path d="M 23,19 C 11,26 11,49 32,49 C 49,49 53,35 53,24" fill="none" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
-      <!-- 入口（開口部）への進入矢印 -->
       <path d="M 38,7 L 38,23 M 32,17 L 38,23 L 44,17" fill="none" stroke="#f5b301" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>`;
 }
@@ -313,7 +465,7 @@ function hookSVG(h, size = 52){
 function lineCands(st){
   let d = Math.abs(st.hook - ANGLES[st.angle].a) % 12;
   if (d > 6) d = 12 - d;
-  const pos = Math.round(d); // 0〜6
+  const pos = Math.round(d);
   if (pos === 0) return [0];
   if (pos === 6) return [6];
   return [pos, 12 - pos];
@@ -327,7 +479,6 @@ function compute(st){
     const t = lineTarget(st);
     const lag = (st.land - st.rel + 12) % 12;
     const next = (t - lag + 12) % 12;
-    // 同じ物理位置を逆方向に通過するフェーズ（端点以外）も候補として提示
     const alt = (t % 6 !== 0) ? ((12 - t) - lag + 12) % 12 : null;
     return {line:true, lag, next, alt, target:t};
   }
@@ -340,8 +491,11 @@ function compute(st){
 }
 
 /* ================= 状態 ================= */
-// 横揺れパターンが多いため初期角度を「横」に設定
-const DEFAULT_CALC = {dir:DIRS[0], hook:12, swing:null, angle:'横', rel:null, land:null, target:null, mode:'rel'};
+const DEFAULT_CALC = {
+  store: '', prize: '', count: 1, cost: '', value: '',
+  dir: DIRS[0], hook: 12, swing: null, angle: '横',
+  rel: null, land: null, target: null, mode: 'rel'
+};
 let S = load(LS_CALC, {...DEFAULT_CALC});
 S = {...DEFAULT_CALC, ...S};
 let records = load(LS_REC, []);
@@ -352,15 +506,39 @@ function load(k, def){ try { const v = JSON.parse(localStorage.getItem(k)); retu
 function saveCalc(){ localStorage.setItem(LS_CALC, JSON.stringify(S)); }
 function saveRecs(){ localStorage.setItem(LS_REC, JSON.stringify(records)); }
 
+function showToast(msg){
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
 /* ================= 攻略計算：描画 ================= */
 function renderCalc(){
   const res = compute(S);
 
+  // プレイ基本情報フィールドの同期
+  $('pStore').value = S.store || '';
+  $('pPrize').value = S.prize || '';
+  $('pCount').textContent = S.count || 1;
+  $('pCost').value = S.cost || '';
+  $('pCostSlider').value = S.cost || 0;
+  $('pValue').value = S.value || '';
+  $('pProfitBadge').outerHTML = `<div id="pProfitBadge">${profitBadgeHTML(S.cost, S.value, S.count)}</div>`;
+
+  $('pStoreChips').innerHTML = storeList().slice(0, 6).map(s =>
+    `<button class="chip ${S.store===s?'on':''}" data-act="pick-pstore" data-v="${esc(s)}">${esc(s)}</button>`).join('');
+
+  $('pPrizeChips').innerHTML = PRIZE_PRESETS.map(s =>
+    `<button class="chip ${S.prize===s?'on':''}" data-act="pick-pprize" data-v="${esc(s)}">${esc(s)}</button>`).join('');
+
+  // Step 1
   $('dirSeg').innerHTML = DIRS.map(d =>
     `<button class="segbtn ${S.dir===d?'on':''}" data-act="dir" data-v="${d}">${d}</button>`).join('');
 
   $('hookClock').innerHTML = clockHTML('hook', null);
 
+  // Step 2
   $('swingSeg').innerHTML = Object.entries(SWINGS).map(([k,t]) =>
     `<button class="segbtn ${S.swing===k?'on':''}" data-act="swing" data-v="${k}" id="swing-${k}">${t}</button>`).join('');
 
@@ -374,18 +552,18 @@ function renderCalc(){
     $('timingWrap').innerHTML = `<div class="hint">↑ 1手目の揺れ方を選んでください</div>`;
   } else {
     const line = S.swing === 'line';
-    const modes = [['rel','🟢 離した',S.rel],['land','🔴 着地',S.land]];
+    const modes = [['rel','🟢 押した',S.rel],['land','🔴 着地',S.land]];
     if (line) modes.push(['tgt','🎯 フック入口', lineTarget(S)]);
     $('timingWrap').innerHTML =
       `<div class="label">タイミング入力（${line?'直線位置':'時計盤'}を2タップ）</div>
        <div class="seg mode">${modes.map(([k,t,v]) =>
          `<button class="segbtn m-${k} ${S.mode===k?'on':''}" data-act="mode" data-v="${k}">${t}<small>${pointName(S,v)}</small></button>`).join('')}</div>
        ${line ? gaugeHTML(res) : clockHTML('timing', res)}
-       <div class="legend"><span><i style="background:var(--grn)"></i>離した</span><span><i style="background:var(--red)"></i>着地</span>
+       <div class="legend"><span><i style="background:var(--grn)"></i>押した</span><span><i style="background:var(--red)"></i>着地</span>
          <span><i style="background:var(--tgt)"></i>フック入口</span><span><i style="border:2px dashed var(--acc)"></i>2手目</span></div>`;
   }
 
-  // 結果
+  // Step 3：結果表示
   let html;
   if (res){
     const label = res.line ? phaseLabel(res.next, S.angle) : `${res.next}時`;
@@ -393,15 +571,19 @@ function renderCalc(){
     html = `<div class="step-h" style="justify-content:center"><span class="step-no">3</span>計算結果</div>
       <div class="res-k" style="margin-top:10px">2手目は</div>
       <div class="res-big" id="resultValue">【 ${esc(label)} 】</div>
-      <div class="res-k">でボタンを離す！</div>
-      <div class="res-lag">${lagTxt}${res.lag===0?'（離した瞬間に着地）':''}　🪝入口:${esc(pointName(S,res.target))}</div>
-      ${res.alt!=null ? `<div class="res-alt">または【 ${esc(phaseLabel(res.alt,S.angle))} 】でもOK（逆方向で同位置）</div>` : ''}`;
+      <div class="res-k">でボタンを押す！</div>
+      <div class="res-lag">${lagTxt}${res.lag===0?'（押した瞬間に着地）':''}　🪝入口:${esc(pointName(S,res.target))}</div>
+      ${res.alt!=null ? `<div class="res-alt">または【 ${esc(phaseLabel(res.alt,S.angle))} 】でもOK（逆方向で同位置）</div>` : ''}
+      
+      <button class="btn-win" data-act="quick-win" id="btnQuickWin">🎉 獲得した！（記録に追加）</button>
+      <button class="btn-main" data-act="open-save" id="btnOpenSave">📝 詳細を編集して記録する</button>`;
   } else {
-    const msg = !S.swing ? '軌道タイプを選択' : (S.rel==null ? '🟢 1手目でボタンを離した時刻をタップ' : '🔴 1手目で着地した時刻をタップ');
+    const msg = !S.swing ? '軌道タイプを選択' : (S.rel==null ? '🟢 1手目でボタンを押した時刻をタップ' : '🔴 1手目で着地した時刻をタップ');
     html = `<div class="step-h" style="justify-content:center"><span class="step-no">3</span>計算結果</div>
-      <div class="res-wait" style="margin-top:10px;color:var(--mut)">${msg}</div>`;
+      <div class="res-wait" style="margin-top:10px;color:var(--mut)">${msg}</div>
+      <button class="btn-win" data-act="quick-win" id="btnQuickWin">🎉 獲得した！（この設定で記録）</button>
+      <button class="btn-main" data-act="open-save" id="btnOpenSave">📝 記録データを入力して保存</button>`;
   }
-  html += `<button class="btn-main" data-act="open-save" id="btnOpenSave">💾 この攻略データを記録する</button>`;
   $('resultCard').innerHTML = html;
   saveCalc();
 }
@@ -446,17 +628,21 @@ function gaugeHTML(res){
       sub = '折り返し';
     } else {
       const isFwd = p < 6;
-      sub = isFwd ? '往 →' : '← 復';
+      sub = isFwd ? '→' : '←';
       if (p === 3 || p === 9) name = '中央';
-      else if (p === 1 || p === 11) name = `${A}寄`;
-      else if (p === 2 || p === 10) name = `やや${A}`;
-      else if (p === 4 || p === 8) name = `やや${B}`;
-      else if (p === 5 || p === 7) name = `${B}寄`;
+      else if (p === 1) name = `${A}端直後`;
+      else if (p === 2) name = '中央直前';
+      else if (p === 4) name = '中央直後';
+      else if (p === 5) name = `${B}端直前`;
+      else if (p === 7) name = `${B}端直後`;
+      else if (p === 8) name = '中央直前';
+      else if (p === 10) name = '中央直後';
+      else if (p === 11) name = `${A}端直前`;
     }
     return `<button type="button" class="${cls}" style="grid-column:${col};${end?'':`grid-row:${row}`}" data-act="phase" data-v="${p}" id="phase-${p}">${name}<small>${sub}</small></button>`;
   };
 
-  return `<div class="gauge-h"><span>${ic} ${S.angle}揺れ：${A}端 ⇄ ${B}端（12分割）</span><span>往路/復路</span></div>
+  return `<div class="gauge-h"><span>${ic} ${S.angle}揺れ：${A}端 ⇄ ${B}端（12分割）</span><span>進行：→ / 戻り：←</span></div>
     <div class="gauge">
       ${cell(0, 1, 0, A)}
       ${cell(1, 2, 1)} ${cell(2, 3, 1)} ${cell(3, 4, 1)} ${cell(4, 5, 1)} ${cell(5, 6, 1)}
@@ -484,13 +670,31 @@ function storeList(){
   return [...seen.keys()];
 }
 
-function summaryHTML(r){
+/* 成功周期を主役に表示 */
+function successHTML(r){
   const res = compute(r);
   const sw = r.swing ? SWINGS[r.swing] + (r.swing==='line' ? `（${r.angle}）` : '') : '未入力';
-  return `進行：${esc(r.dir)}　フック入口：${hourName(r.hook)}<br>
-    軌道：${sw}<br>
-    1手目：🟢${esc(pointName(r,r.rel))} で離す → 🔴${esc(pointName(r,r.land))} にかかった
-    ${res ? `<br>2手目推奨：<b>${esc(res.line ? phaseLabel(res.next,r.angle) : res.next+'時')}</b>（${res.line?'ラグ+'+res.lag+'フェーズ':'ラグ+'+res.lag+'時間'}）` : ''}`;
+  const targetLabel = r.swing === 'line' ? phaseLabel(lineTarget(r), r.angle) : hourName(r.hook);
+  
+  if (res){
+    const nextTiming = res.line ? phaseLabel(res.next, r.angle) : `${res.next}時`;
+    const lagStr = res.line ? `+${res.lag}フェーズ` : `+${res.lag}時間分`;
+    return `
+      <div class="rec-success-box">
+        <div class="stitle">🏆 成功タイミング（正解周期）</div>
+        <div class="smain">【 ${esc(nextTiming)} 】でボタンを押す！</div>
+        <div class="ssub">
+          フック入口：${targetLabel}　|　軌道：${sw}<br>
+          測定ラグ：${lagStr}（🟢${esc(pointName(r,r.rel))} ➔ 🔴${esc(pointName(r,r.land))}）
+        </div>
+      </div>`;
+  }
+  return `
+    <div class="rec-success-box">
+      <div class="stitle">🎯 台の設定データ</div>
+      <div class="smain">フック入口：${targetLabel}</div>
+      <div class="ssub">クレーン進行：${esc(r.dir)}　|　軌道：${sw}</div>
+    </div>`;
 }
 
 function renderLog(){
@@ -505,36 +709,52 @@ function renderLog(){
     .filter(r => !q || (r.store + ' ' + r.prize).toLowerCase().includes(q))
     .sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
 
-  const total = records.reduce((s,r) => s + (r.count||0), 0);
-  $('appSub').textContent = `${records.length}件・累計${total}個`;
+  const total = records.reduce((s,r) => s + (parseInt(r.count,10)||0), 0);
+  const totalProfit = records.reduce((s,r) => {
+    const p = calcProfit(r.cost, r.value, r.count);
+    return s + (p != null ? p : 0);
+  }, 0);
+
+  const profitText = totalProfit !== 0 ? `・お得額 ${totalProfit>0?'+':''}${totalProfit.toLocaleString()}円` : '';
+  $('appSub').textContent = `${records.length}件・累計${total}個${profitText}`;
 
   if (!records.length){
-    $('logList').innerHTML = `<div class="empty">まだ記録がありません。<br>「🎯 攻略計算」で計算後、<br>「💾 この攻略データを記録する」から保存できます。</div>`;
+    $('logList').innerHTML = `<div class="empty">まだ記録がありません。<br>「🎯 攻略計算」でプレイ後、<br>「🎉 獲得した！」ボタンからすぐ保存できます。</div>`;
     return;
   }
   if (!list.length){ $('logList').innerHTML = `<div class="empty">条件に一致する記録がありません</div>`; return; }
 
   $('logList').innerHTML = list.map(r => {
     const isEdited = r.createdAt && r.updatedAt && Math.abs(r.updatedAt - r.createdAt) > 2000;
+    const p = calcProfit(r.cost, r.value, r.count);
+    let moneyHTML = '';
+    if (r.cost || r.value){
+      const costTxt = r.cost ? `投入: ${parseInt(r.cost,10).toLocaleString()}円` : '投入: —';
+      const valTxt = r.value ? `価値: ${(parseInt(r.value,10)*(r.count||1)).toLocaleString()}円` : '';
+      const profitClass = p > 0 ? 'plus' : (p < 0 ? 'minus' : '');
+      const pTxt = p != null ? `<span class="profit ${profitClass}">${p>0?'+':''}${p.toLocaleString()}円</span>` : '';
+      moneyHTML = `<div class="rec-money-box"><span>💰 ${costTxt} ${valTxt?'/ '+valTxt:''}</span>${pTxt}</div>`;
+    }
+
     return `
     <article class="card" data-id="${r.id}">
       <div class="rec-top">
         <div class="rec-title">
           <div class="rec-store">🏪 ${esc(r.store || '（店舗名なし）')}</div>
-          <div class="rec-prize">🎁 ${esc(r.prize || '景品未入力')}</div>
+          <div class="rec-prize">🎁 ${esc(r.prize || '景品名なし')}</div>
         </div>
-        <div class="counter">
-          <button data-act="dec" data-id="${r.id}" aria-label="獲得数を減らす">−</button>
-          <span class="n">${r.count||0}<small>個</small></span>
-          <button data-act="inc" data-id="${r.id}" aria-label="獲得数を増やす">＋</button>
-        </div>
+        <div class="rec-count-badge">獲得 <b>${r.count||1}</b> 個</div>
       </div>
-      <div class="rec-body">${summaryHTML(r)}</div>
+      
+      ${successHTML(r)}
+      ${moneyHTML}
       ${r.memo ? `<div class="rec-memo">📝 ${esc(r.memo)}</div>` : ''}
+
       <div class="rec-meta">
         <span>📅 記録：${formatDateTime(r.createdAt || r.updatedAt)}</span>
         ${isEdited ? `<span>✏️ 編集：${formatDateTime(r.updatedAt)}</span>` : ''}
       </div>
+
       <div class="rec-actions">
         <button data-act="edit" data-id="${r.id}">✏️ 編集</button>
         <button class="load" data-act="load" data-id="${r.id}">📥 計算機に読み込む</button>
@@ -543,31 +763,82 @@ function renderLog(){
   }).join('');
 }
 
+/* ================= クイック獲得ボタン（ワンタップ自動記録） ================= */
+function quickWin(){
+  const now = Date.now();
+  const res = compute(S);
+  const winCount = parseInt(S.count, 10) || 1;
+  const rec = {
+    id: now.toString(36) + Math.random().toString(36).slice(2,6),
+    store: (S.store || '').trim(),
+    prize: (S.prize || '').trim(),
+    count: winCount,
+    cost: S.cost || '',
+    value: S.value || '',
+    dir: S.dir,
+    hook: S.hook,
+    swing: S.swing,
+    angle: S.angle,
+    rel: S.rel,
+    land: S.land,
+    target: S.target,
+    successNext: res ? res.next : null,
+    lag: res ? res.lag : null,
+    memo: '',
+    createdAt: now,
+    updatedAt: now
+  };
+  records.unshift(rec);
+  saveRecs();
+  renderLog();
+  showToast(`🎉 ${winCount}個 獲得を記録ログに追加しました！`);
+}
+
 /* ================= ダイアログ ================= */
 function openDlg(rec){
   const now = Date.now();
   D = rec ? {...rec} : {
-    id:null, store:'', prize:'', count:1, memo:'',
-    dir:S.dir, hook:S.hook, swing:S.swing, angle:S.angle, rel:S.rel, land:S.land, target:S.target,
+    id: null,
+    store: S.store || '',
+    prize: S.prize || '',
+    count: S.count || 1,
+    cost: S.cost || '',
+    value: S.value || '',
+    memo: '',
+    dir: S.dir, hook: S.hook, swing: S.swing, angle: S.angle,
+    rel: S.rel, land: S.land, target: S.target,
     createdAt: now, updatedAt: now
   };
+
   $('dlgTitle').textContent = rec ? '✏️ 記録を編集' : '💾 攻略データを記録';
 
-  // 日時の自動入力バナー表示
   if (rec){
     $('dlgDateBanner').innerHTML = `
       <div>📅 初回記録：<strong>${formatDateTime(D.createdAt || D.updatedAt)}</strong></div>
-      <div>✏️ 最終編集：<strong>${formatDateTime(D.updatedAt)}</strong>（今回保存時に自動更新されます）</div>`;
+      <div>✏️ 最終編集：<strong>${formatDateTime(D.updatedAt)}</strong>（今回保存時に更新）</div>`;
   } else {
     $('dlgDateBanner').innerHTML = `
       <div>📅 記録日時：<strong>${formatDateTime(now)}</strong>（保存時に自動入力）</div>`;
   }
 
-  $('fStore').value = D.store; $('fPrize').value = D.prize; $('fMemo').value = D.memo || '';
+  $('fStore').value = D.store;
+  $('fPrize').value = D.prize;
   $('fCount').textContent = D.count;
-  $('fStoreChips').innerHTML = storeList().slice(0,10).map(s => `<button class="chip" data-act="pick-store" data-v="${esc(s)}">${esc(s)}</button>`).join('');
-  $('fPrizeChips').innerHTML = PRIZE_PRESETS.map(s => `<button class="chip" data-act="pick-prize" data-v="${esc(s)}">${esc(s)}</button>`).join('');
-  $('dlgDelWrap').innerHTML = rec ? `<button class="btn-sub btn-danger" data-act="dlg-del" id="dlgDelete">🗑 この記録を削除</button>` : '';
+  $('fCost').value = D.cost;
+  $('fCostSlider').value = D.cost || 0;
+  $('fValue').value = D.value;
+  $('fMemo').value = D.memo || '';
+  $('dlgProfitBadge').outerHTML = `<div id="dlgProfitBadge">${profitBadgeHTML(D.cost, D.value, D.count)}</div>`;
+
+  $('fStoreChips').innerHTML = storeList().slice(0, 8).map(s =>
+    `<button class="chip" data-act="pick-fstore" data-v="${esc(s)}">${esc(s)}</button>`).join('');
+
+  $('fPrizeChips').innerHTML = PRIZE_PRESETS.map(s =>
+    `<button class="chip" data-act="pick-fprize" data-v="${esc(s)}">${esc(s)}</button>`).join('');
+
+  $('dlgDelWrap').innerHTML = rec
+    ? `<button class="btn-sub btn-danger" data-act="dlg-del" id="dlgDelete">🗑 この記録を削除</button>` : '';
+
   renderDlgSettings();
   $('recDlg').showModal();
 }
@@ -586,16 +857,18 @@ function renderDlgSettings(){
       <label>揺れの軌道<select data-f="swing">${opt(none.concat(Object.entries(SWINGS)), D.swing)}</select></label>
       ${line ? `<label>揺れの角度<select data-f="angle">${opt(Object.keys(ANGLES).map(k=>[k,k]), D.angle)}</select></label>` : '<span></span>'}
       ${D.swing ? `
-      <label>🟢 何時/位置で離した<select data-f="rel">${opt(none.concat(pts), D.rel)}</select></label>
-      <label>🔴 何時/位置にかかった<select data-f="land">${opt(none.concat(pts), D.land)}</select></label>
+      <label>🟢 押した時刻/位置<select data-f="rel">${opt(none.concat(pts), D.rel)}</select></label>
+      <label>🔴 かかった時刻/位置<select data-f="land">${opt(none.concat(pts), D.land)}</select></label>
       ${line ? `<label>🪝 目標入口位置<select data-f="target">${opt([['','自動（フック方向）']].concat(pts), D.target)}</select></label>` : ''}` : ''}
     </div>
-    ${res ? `<div class="dlg-res">→ 2手目推奨：${esc(res.line ? phaseLabel(res.next,D.angle) : res.next+'時')}（ラグ+${res.lag}${res.line?'フェーズ':'時間'}）</div>` : ''}`;
+    ${res ? `<div class="dlg-res">🏆 成功タイミング：【 ${esc(res.line ? phaseLabel(res.next,D.angle) : res.next+'時')} 】でボタンを押す（ラグ+${res.lag}${res.line?'フェーズ':'時間'}）</div>` : ''}`;
 }
 
 function saveDlg(){
   D.store = $('fStore').value.trim();
   D.prize = $('fPrize').value.trim();
+  D.cost = $('fCost').value;
+  D.value = $('fValue').value;
   D.memo = $('fMemo').value.trim();
   const now = Date.now();
   if (D.id){
@@ -604,11 +877,12 @@ function saveDlg(){
       records[i] = {...D, createdAt: D.createdAt || records[i].createdAt || now, updatedAt: now};
     }
   } else {
-    records.push({...D, id: now.toString(36) + Math.random().toString(36).slice(2,6), createdAt: now, updatedAt: now});
+    records.unshift({...D, id: now.toString(36) + Math.random().toString(36).slice(2,6), createdAt: now, updatedAt: now});
   }
   saveRecs();
   $('recDlg').close();
   renderLog();
+  showToast('💾 記録を保存しました！');
   if (!D.id) switchTab('log');
 }
 
@@ -622,7 +896,7 @@ function switchTab(t){
   window.scrollTo({top:0});
 }
 
-/* ================= イベント ================= */
+/* ================= イベントリスナー ================= */
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;
@@ -631,6 +905,49 @@ document.addEventListener('click', e => {
 
   switch (act){
     case 'tab': switchTab(v); return;
+
+    // プレイ基本情報
+    case 'reset-item':
+      // 店舗情報以外をリセット（次の台・景品へ）
+      S.prize = '';
+      S.count = 1;
+      S.cost = '';
+      S.value = '';
+      S.rel = null;
+      S.land = null;
+      S.target = null;
+      S.mode = 'rel';
+      renderCalc();
+      showToast('🔄 店舗名以外をリセットしました（次の台へ）');
+      return;
+
+    case 'pick-pstore': S.store = v; $('pStore').value = v; renderCalc(); return;
+    case 'pick-pprize': S.prize = v; $('pPrize').value = v; renderCalc(); return;
+    case 'pcount-inc': case 'pcount-dec':
+      S.count = Math.max(1, (parseInt(S.count,10)||1) + (act==='pcount-inc'?1:-1));
+      $('pCount').textContent = S.count;
+      $('pProfitBadge').outerHTML = `<div id="pProfitBadge">${profitBadgeHTML(S.cost, S.value, S.count)}</div>`;
+      saveCalc();
+      return;
+
+    case 'step-cost': {
+      const cur = parseInt(S.cost, 10) || 0;
+      const next = Math.max(0, cur + parseInt(v, 10));
+      S.cost = next === 0 ? '' : next;
+      $('pCost').value = S.cost;
+      $('pCostSlider').value = next;
+      $('pProfitBadge').outerHTML = `<div id="pProfitBadge">${profitBadgeHTML(S.cost, S.value, S.count)}</div>`;
+      saveCalc();
+      return;
+    }
+    case 'clear-cost':
+      S.cost = '';
+      $('pCost').value = '';
+      $('pCostSlider').value = 0;
+      $('pProfitBadge').outerHTML = `<div id="pProfitBadge">${profitBadgeHTML(S.cost, S.value, S.count)}</div>`;
+      saveCalc();
+      return;
+
     // 計算
     case 'dir': S.dir = v; break;
     case 'hook': S.hook = +v; S.target = null; break;
@@ -639,41 +956,90 @@ document.addEventListener('click', e => {
     case 'mode': S.mode = v; break;
     case 'timing': case 'phase': setPoint(+v); break;
     case 'reset': S.rel = null; S.land = null; S.target = null; S.mode = 'rel'; break;
+
+    // 獲得＆記録
+    case 'quick-win': quickWin(); return;
     case 'open-save': openDlg(null); return;
-    // ログ
+
+    // ログタブ
     case 'fstore': F.store = v; renderLog(); return;
-    case 'inc': case 'dec':
-      if (rec){
-        rec.count = Math.max(0, (rec.count||0) + (act==='inc'?1:-1));
-        rec.updatedAt = Date.now();
-        if (!rec.createdAt) rec.createdAt = rec.updatedAt;
-        saveRecs();
-        renderLog();
-      }
-      return;
     case 'edit': if (rec) openDlg(rec); return;
     case 'load':
       if (rec){
-        S = {...DEFAULT_CALC, dir:rec.dir, hook:rec.hook, swing:rec.swing, angle:rec.angle||'横',
-             rel:rec.rel, land:rec.land, target:rec.target ?? null, mode:'rel'};
-        renderCalc(); switchTab('calc');
+        S = {
+          ...DEFAULT_CALC,
+          store: rec.store || '', prize: rec.prize || '', count: rec.count || 1,
+          cost: rec.cost || '', value: rec.value || '',
+          dir: rec.dir, hook: rec.hook, swing: rec.swing, angle: rec.angle || '横',
+          rel: rec.rel, land: rec.land, target: rec.target ?? null, mode: 'rel'
+        };
+        renderCalc();
+        switchTab('calc');
+        showToast('📥 攻略データを計算機に読み込みました！');
       }
       return;
+
     // ダイアログ
     case 'dlg-close': $('recDlg').close(); return;
     case 'dlg-inc': case 'dlg-dec':
-      D.count = Math.max(0, D.count + (act==='dlg-inc'?1:-1)); $('fCount').textContent = D.count; return;
-    case 'pick-store': $('fStore').value = v; return;
-    case 'pick-prize': $('fPrize').value = v; return;
+      D.count = Math.max(1, (parseInt(D.count,10)||1) + (act==='dlg-inc'?1:-1));
+      $('fCount').textContent = D.count;
+      $('dlgProfitBadge').outerHTML = `<div id="dlgProfitBadge">${profitBadgeHTML(D.cost, D.value, D.count)}</div>`;
+      return;
+    case 'pick-fstore': $('fStore').value = v; return;
+    case 'pick-fprize': $('fPrize').value = v; return;
     case 'dlg-save': saveDlg(); return;
     case 'dlg-del':
       if (confirm('この記録を削除しますか？')){
-        records = records.filter(r => r.id !== D.id); saveRecs(); $('recDlg').close(); renderLog();
+        records = records.filter(r => r.id !== D.id);
+        saveRecs();
+        $('recDlg').close();
+        renderLog();
+        showToast('🗑 記録を削除しました');
       }
       return;
     default: return;
   }
   renderCalc();
+});
+
+// プレイ基本情報の入力同期
+$('pStore').addEventListener('input', e => { S.store = e.target.value; saveCalc(); });
+$('pPrize').addEventListener('input', e => { S.prize = e.target.value; saveCalc(); });
+$('pCost').addEventListener('input', e => {
+  S.cost = e.target.value;
+  $('pCostSlider').value = e.target.value || 0;
+  $('pProfitBadge').outerHTML = `<div id="pProfitBadge">${profitBadgeHTML(S.cost, S.value, S.count)}</div>`;
+  saveCalc();
+});
+$('pCostSlider').addEventListener('input', e => {
+  const val = parseInt(e.target.value, 10);
+  S.cost = val === 0 ? '' : val;
+  $('pCost').value = S.cost;
+  $('pProfitBadge').outerHTML = `<div id="pProfitBadge">${profitBadgeHTML(S.cost, S.value, S.count)}</div>`;
+  saveCalc();
+});
+$('pValue').addEventListener('input', e => {
+  S.value = e.target.value;
+  $('pProfitBadge').outerHTML = `<div id="pProfitBadge">${profitBadgeHTML(S.cost, S.value, S.count)}</div>`;
+  saveCalc();
+});
+
+// ダイアログ内の収支入力同期
+$('fCost').addEventListener('input', e => {
+  D.cost = e.target.value;
+  $('fCostSlider').value = e.target.value || 0;
+  $('dlgProfitBadge').outerHTML = `<div id="dlgProfitBadge">${profitBadgeHTML(D.cost, D.value, D.count)}</div>`;
+});
+$('fCostSlider').addEventListener('input', e => {
+  const val = parseInt(e.target.value, 10);
+  D.cost = val === 0 ? '' : val;
+  $('fCost').value = D.cost;
+  $('dlgProfitBadge').outerHTML = `<div id="dlgProfitBadge">${profitBadgeHTML(D.cost, D.value, D.count)}</div>`;
+});
+$('fValue').addEventListener('input', e => {
+  D.value = e.target.value;
+  $('dlgProfitBadge').outerHTML = `<div id="dlgProfitBadge">${profitBadgeHTML(D.cost, D.value, D.count)}</div>`;
 });
 
 // ダイアログ内のセレクト変更
